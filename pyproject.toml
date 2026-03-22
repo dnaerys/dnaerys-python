@@ -1,0 +1,44 @@
+[project]
+name = "dnaerys"
+version = "0.1.0"
+description = "Python client library for the Dnaerys genome variant store"
+authors = [{name = "Dnaerys", email = "info@dnaerys.org"}]
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "grpcio>=1.78.0",
+    "protobuf>=6.33.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/dnaerys/dnaerys-python"
+
+[project.optional-dependencies]
+pandas = ["pandas>=2.0"]
+dev = [
+    "pytest>=8.0",
+    "grpcio-tools>=1.78.0",
+    "build>=1.0",
+    "twine>=5.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "e2e: end-to-end tests against a real Dnaerys cluster (deselect with '-m \"not e2e\"')",
+]
