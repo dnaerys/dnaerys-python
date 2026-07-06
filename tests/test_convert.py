@@ -83,12 +83,12 @@ class TestConvertVariant:
             af=0.5,
             ac=1.0,
             an=2,
-            homc=0,
-            hetc=1,
-            misc=0,
-            homfc=0,
-            hetfc=0,
-            misfc=0,
+            hom_samples=0,
+            het_samples=1,
+            mis_samples=0,
+            hom_samples_fx=0,
+            het_samples_fx=0,
+            mis_samples_fx=0,
             gnomADe=0.1,
             gnomADg=0.2,
             cadd_raw=3.5,
@@ -99,7 +99,7 @@ class TestConvertVariant:
         )
         v = convert_variant(proto)
         assert isinstance(v, Variant)
-        assert v.chr == Chromosome.CHR_1
+        assert v.chr == Chromosome.CHR1
         assert v.start == 100
         assert v.end == 100
         assert v.ref == "A"
@@ -107,12 +107,12 @@ class TestConvertVariant:
         assert v.af == 0.5
         assert v.ac == 1.0
         assert v.an == 2
-        assert v.homc == 0
-        assert v.hetc == 1
-        assert v.misc == 0
-        assert v.homfc == 0
-        assert v.hetfc == 0
-        assert v.misfc == 0
+        assert v.hom_samples == 0
+        assert v.het_samples == 1
+        assert v.mis_samples == 0
+        assert v.hom_samples_fx == 0
+        assert v.het_samples_fx == 0
+        assert v.mis_samples_fx == 0
         assert abs(v.gnomad_exomes_af - 0.1) < 1e-6
         assert abs(v.gnomad_genomes_af - 0.2) < 1e-6
         assert abs(v.cadd_raw - 3.5) < 1e-6
@@ -125,7 +125,7 @@ class TestConvertVariant:
         proto = pb2.Variant(chr=23, start=1, end=1, ref="G", alt="C")
         v = convert_variant(proto)
         assert isinstance(v.chr, Chromosome)
-        assert v.chr == Chromosome.CHR_X
+        assert v.chr == Chromosome.CHRX
 
     def test_convert_variant_gnomad_field_mapping(self):
         proto = pb2.Variant(
@@ -158,15 +158,15 @@ class TestConvertVariantWithStats:
     def _make_proto(self, **overrides):
         variant_kwargs = {
             "chr": 1, "start": 200, "end": 200, "ref": "G", "alt": "C",
-            "af": 0.3, "ac": 2.0, "an": 6, "homc": 1, "hetc": 2,
-            "misc": 0, "homfc": 0, "hetfc": 1, "misfc": 0,
+            "af": 0.3, "ac": 2.0, "an": 6, "hom_samples": 1, "het_samples": 2,
+            "mis_samples": 0, "hom_samples_fx": 0, "het_samples_fx": 1, "mis_samples_fx": 0,
             "gnomADe": 0.15, "gnomADg": 0.25,
             "cadd_raw": 1.5, "cadd_phred": 10.0, "am_score": 0.6,
             "amino_acids": "R/Q", "biallelic": True,
         }
         stats_kwargs = {
-            "vaf": 0.4, "vac": 1.5, "van": 4, "vhomc": 0, "vhetc": 1,
-            "vhomfc": 0, "vhetfc": 0,
+            "vaf": 0.4, "vac": 1.5, "van": 4, "v_hom_samples": 0, "v_het_samples": 1,
+            "v_hom_samples_fx": 0, "v_het_samples_fx": 0,
             "phwe": 0.05, "pchi2": 0.01, "ibc": 0.02,
         }
         # The 'or' field must be set via **kwargs
@@ -182,7 +182,7 @@ class TestConvertVariantWithStats:
         proto = self._make_proto()
         v = convert_variant_with_stats(proto)
         # Variant fields are flattened — accessible directly, not via .variant
-        assert v.chr == Chromosome.CHR_1
+        assert v.chr == Chromosome.CHR1
         assert v.start == 200
         assert v.ref == "G"
         assert v.alt == "C"
@@ -192,7 +192,7 @@ class TestConvertVariantWithStats:
         v = convert_variant_with_stats(proto)
         assert isinstance(v, VariantWithStats)
         # All 21 variant fields
-        assert v.chr == Chromosome.CHR_1
+        assert v.chr == Chromosome.CHR1
         assert v.start == 200
         assert v.end == 200
         assert v.ref == "G"
@@ -200,12 +200,12 @@ class TestConvertVariantWithStats:
         assert abs(v.af - 0.3) < 1e-6
         assert abs(v.ac - 2.0) < 1e-6
         assert v.an == 6
-        assert v.homc == 1
-        assert v.hetc == 2
-        assert v.misc == 0
-        assert v.homfc == 0
-        assert v.hetfc == 1
-        assert v.misfc == 0
+        assert v.hom_samples == 1
+        assert v.het_samples == 2
+        assert v.mis_samples == 0
+        assert v.hom_samples_fx == 0
+        assert v.het_samples_fx == 1
+        assert v.mis_samples_fx == 0
         assert abs(v.gnomad_exomes_af - 0.15) < 1e-6
         assert abs(v.gnomad_genomes_af - 0.25) < 1e-6
         assert abs(v.cadd_raw - 1.5) < 1e-6
@@ -217,10 +217,10 @@ class TestConvertVariantWithStats:
         assert abs(v.vaf - 0.4) < 1e-6
         assert abs(v.vac - 1.5) < 1e-6
         assert v.van == 4
-        assert v.vhomc == 0
-        assert v.vhetc == 1
-        assert v.vhomfc == 0
-        assert v.vhetfc == 0
+        assert v.v_hom_samples == 0
+        assert v.v_het_samples == 1
+        assert v.v_hom_samples_fx == 0
+        assert v.v_het_samples_fx == 0
         assert abs(v.phwe - 0.05) < 1e-6
         assert abs(v.pchi2 - 0.01) < 1e-6
         assert abs(v.odds_ratio - 1.5) < 1e-6
@@ -379,6 +379,7 @@ class TestConvertInfrastructure:
             rings_total=4,
             elapsed_ms=100,
             node_id="node-1",
+            max_variants_per_ring=5000,
         )
         result = convert_dataset_info_response(proto)
         assert isinstance(result, DatasetInfo)
@@ -391,6 +392,7 @@ class TestConvertInfrastructure:
         assert result.prs[0].description == "Test PRS"
         assert result.elapsed_ms == 100
         assert result.node_id == "node-1"
+        assert result.max_variants_per_ring == 5000
 
     def test_convert_cohort(self):
         proto = pb2.Cohort(
@@ -600,11 +602,11 @@ class TestConvertStatistical:
         vws = pb2.VariantWithStats(
             variant=pb2.Variant(
                 chr=1, start=100, end=100, ref="A", alt="T",
-                af=0.5, ac=1.0, an=2, homc=0, hetc=1,
+                af=0.5, ac=1.0, an=2, hom_samples=0, het_samples=1,
                 gnomADe=0.1, gnomADg=0.2,
                 amino_acids="X/Y", biallelic=True,
             ),
-            vaf=0.3, vac=1.0, van=4, vhomc=0, vhetc=1,
+            vaf=0.3, vac=1.0, van=4, v_hom_samples=0, v_het_samples=1,
             phwe=0.001, pchi2=0.05, ibc=0.01,
             **{"or": 1.2},
         )
@@ -616,18 +618,18 @@ class TestConvertStatistical:
         result = convert_alleles_with_stats_response_to_top_hwe(proto)
         assert isinstance(result, TopHweResult)
         assert len(result.variants) == 1
-        assert result.variants[0].chr == Chromosome.CHR_1
+        assert result.variants[0].chr == Chromosome.CHR1
         assert result.metadata.elapsed_ms == 100
 
     def test_convert_top_chi2_result(self):
         vws = pb2.VariantWithStats(
             variant=pb2.Variant(
                 chr=2, start=500, end=500, ref="C", alt="G",
-                af=0.1, ac=0.5, an=10, homc=0, hetc=1,
+                af=0.1, ac=0.5, an=10, hom_samples=0, het_samples=1,
                 gnomADe=0.0, gnomADg=0.0,
                 amino_acids="", biallelic=True,
             ),
-            vaf=0.2, vac=0.5, van=5, vhomc=0, vhetc=1,
+            vaf=0.2, vac=0.5, van=5, v_hom_samples=0, v_het_samples=1,
             phwe=0.5, pchi2=0.003, ibc=0.0,
             **{"or": 3.5},
         )
@@ -639,7 +641,7 @@ class TestConvertStatistical:
         result = convert_alleles_with_stats_response_to_top_chi2(proto)
         assert isinstance(result, TopChi2Result)
         assert len(result.variants) == 1
-        assert result.variants[0].chr == Chromosome.CHR_2
+        assert result.variants[0].chr == Chromosome.CHR2
         assert abs(result.variants[0].odds_ratio - 3.5) < 1e-6
         assert result.metadata.elapsed_ms == 200
 

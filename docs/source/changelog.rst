@@ -1,6 +1,43 @@
 Changelog
 =========
 
+v0.2.0 (July 2026)
+------------------
+
+- **Breaking changes**: Retargets the Dnaerys proto schema to **R1.20.0**.
+- **Per-ring cap awareness**: R1.20.0 hard-caps each ring's streaming response
+  at ``DatasetInfo.max_variants_per_ring`` (new field). The client now discovers
+  this cap (cached; fallback 5000) and uses it to keep results complete:
+
+  - **Strong** ``limit``: :meth:`~dnaerys.DnaerysClient.select_variants`,
+    :meth:`~dnaerys.DnaerysClient.select_variants_with_stats` and the inheritance
+    selectors now fetch in internal constant-window ``skip`` batches and trim to
+    exactly ``limit``. ``limit`` may now **exceed** the per-ring cap (and
+    ``cap × rings``) and is still honoured exactly. With ``limit=None`` a single
+    request is made and each ring returns up to its cap, so large regions may be
+    truncated — pass a ``limit`` or paginate for complete results.
+  - **Pagination**: ``paginate_*`` now keeps every ring's full window each
+    round-trip. ``buffer_size`` defaults to the server per-ring cap and is clamped to it
+    (values above the cap warn); ``page_size`` may now exceed ``buffer_size``.
+- :class:`~dnaerys.Chromosome` enum members renamed to drop the underscore:
+  ``CHR_1`` → ``CHR1`` … ``CHR_X`` → ``CHRX``, ``CHR_Y`` → ``CHRY``,
+  ``CHR_MT`` → ``CHRMT``.  Integer values are unchanged, and
+  :func:`~dnaerys.resolve_chromosome` still accepts the old string forms
+  (``"chr_1"``, ``"chr1"``, ``"1"``, ``"chrX"``, …).
+- :class:`~dnaerys.Variant`: the per-variant samples counters: all samples ``homc``/``hetc``/``misc``
+  → ``hom_samples``/``het_samples``/``mis_samples``; the female sample counters
+  ``homfc``/``hetfc``/``misfc`` → ``hom_samples_fx``/``het_samples_fx``/``mis_samples_fx``
+  (X-chromosome only). New male samples counters (X and Y only): ``hom_samples_mxy``, ``het_samples_mxy``, ``mis_samples_mxy``.
+- :class:`~dnaerys.VariantWithStats`: virtual-cohort counters
+  ``vhomc``/``vhetc``/``vhomfc``/``vhetfc`` →
+  ``v_hom_samples``/``v_het_samples``/``v_hom_samples_fx``/``v_het_samples_fx``,
+  plus two new male X&Y counters ``v_hom_samples_mxy`` and ``v_het_samples_mxy``.
+- ``to_dataframe()`` column schemas updated accordingly
+  (:class:`~dnaerys.Variant` 24 columns, :class:`~dnaerys.VariantWithStats`
+  37 columns).
+- Documented that the ``gnomad_exomes_af_lt`` / ``gnomad_genomes_af_lt``
+  filters include unannotated variants (gnomAD AF = 0).
+
 v0.1.0 (March 2026)
 -------------------
 

@@ -1,7 +1,7 @@
 """Enum types mirroring the Dnaerys proto enums, with string alias resolution.
 
 All 12 ``IntEnum`` classes correspond 1:1 to the proto enums defined in
-``dnaerys.proto`` (R1.17.8).  The ``UNSPECIFIED = 0`` sentinel from each proto
+``dnaerys.proto`` (R1.20.0).  The ``UNSPECIFIED = 0`` sentinel from each proto
 enum is deliberately excluded — it has no meaning in client code and would
 pollute autocompletion.
 
@@ -36,7 +36,7 @@ E = TypeVar("E", bound=enum.IntEnum)
 
 
 # ---------------------------------------------------------------------------
-# Enum definitions — values match dnaerys.proto R1.17.8 exactly
+# Enum definitions — values match dnaerys.proto R1.20.0 exactly
 # ---------------------------------------------------------------------------
 
 
@@ -44,35 +44,35 @@ class Chromosome(enum.IntEnum):
     """Human chromosome identifiers.
 
     25 members: autosomes 1–22, sex chromosomes X and Y, and mitochondrial DNA.
-    Integer values match the proto ``Chromosome`` enum (``CHR_1`` = 1 … ``CHR_MT`` = 25).
+    Integer values match the proto ``Chromosome`` enum (``CHR1`` = 1 … ``CHRMT`` = 25).
     ``CHROMOSOME_UNSPECIFIED`` (0) is excluded.
     """
 
-    CHR_1 = 1
-    CHR_2 = 2
-    CHR_3 = 3
-    CHR_4 = 4
-    CHR_5 = 5
-    CHR_6 = 6
-    CHR_7 = 7
-    CHR_8 = 8
-    CHR_9 = 9
-    CHR_10 = 10
-    CHR_11 = 11
-    CHR_12 = 12
-    CHR_13 = 13
-    CHR_14 = 14
-    CHR_15 = 15
-    CHR_16 = 16
-    CHR_17 = 17
-    CHR_18 = 18
-    CHR_19 = 19
-    CHR_20 = 20
-    CHR_21 = 21
-    CHR_22 = 22
-    CHR_X = 23
-    CHR_Y = 24
-    CHR_MT = 25
+    CHR1 = 1
+    CHR2 = 2
+    CHR3 = 3
+    CHR4 = 4
+    CHR5 = 5
+    CHR6 = 6
+    CHR7 = 7
+    CHR8 = 8
+    CHR9 = 9
+    CHR10 = 10
+    CHR11 = 11
+    CHR12 = 12
+    CHR13 = 13
+    CHR14 = 14
+    CHR15 = 15
+    CHR16 = 16
+    CHR17 = 17
+    CHR18 = 18
+    CHR19 = 19
+    CHR20 = 20
+    CHR21 = 21
+    CHR22 = 22
+    CHRX = 23
+    CHRY = 24
+    CHRMT = 25
 
 
 class RefAssembly(enum.IntEnum):
@@ -349,14 +349,14 @@ def _build_chromosome_aliases() -> dict[str, Chromosome]:
     for each chromosome:
 
     Autosomes 1–22:
-        ``"chr1"``, ``"chr_1"``, ``"1"`` → ``Chromosome.CHR_1``
+        ``"chr1"``, ``"chr_1"``, ``"1"`` → ``Chromosome.CHR1``
 
     Sex chromosomes:
-        ``"chrx"``, ``"chr_x"``, ``"x"`` → ``Chromosome.CHR_X``
-        ``"chry"``, ``"chr_y"``, ``"y"`` → ``Chromosome.CHR_Y``
+        ``"chrx"``, ``"chr_x"``, ``"x"`` → ``Chromosome.CHRX``
+        ``"chry"``, ``"chr_y"``, ``"y"`` → ``Chromosome.CHRY``
 
     Mitochondrial:
-        ``"chrmt"``, ``"chr_mt"``, ``"mt"`` → ``Chromosome.CHR_MT``
+        ``"chrmt"``, ``"chr_mt"``, ``"mt"`` → ``Chromosome.CHRMT``
     """
     aliases: dict[str, Chromosome] = {}
 
@@ -368,18 +368,18 @@ def _build_chromosome_aliases() -> dict[str, Chromosome]:
         aliases[f"chr_{i}"] = member
 
     # Sex chromosomes
-    aliases["x"] = Chromosome.CHR_X
-    aliases["chrx"] = Chromosome.CHR_X
-    aliases["chr_x"] = Chromosome.CHR_X
+    aliases["x"] = Chromosome.CHRX
+    aliases["chrx"] = Chromosome.CHRX
+    aliases["chr_x"] = Chromosome.CHRX
 
-    aliases["y"] = Chromosome.CHR_Y
-    aliases["chry"] = Chromosome.CHR_Y
-    aliases["chr_y"] = Chromosome.CHR_Y
+    aliases["y"] = Chromosome.CHRY
+    aliases["chry"] = Chromosome.CHRY
+    aliases["chr_y"] = Chromosome.CHRY
 
     # Mitochondrial
-    aliases["mt"] = Chromosome.CHR_MT
-    aliases["chrmt"] = Chromosome.CHR_MT
-    aliases["chr_mt"] = Chromosome.CHR_MT
+    aliases["mt"] = Chromosome.CHRMT
+    aliases["chrmt"] = Chromosome.CHRMT
+    aliases["chr_mt"] = Chromosome.CHRMT
 
     return aliases
 

@@ -65,7 +65,7 @@ def _meta(**overrides):
 class TestRegion:
     def test_region_basic_construction(self):
         r = Region("chr1", 100, 200)
-        assert r.chr == Chromosome.CHR_1
+        assert r.chr == Chromosome.CHR1
         assert r.start == 100
         assert r.end == 200
 
@@ -75,8 +75,8 @@ class TestRegion:
         assert r.alt == "T"
 
     def test_region_enum_chr(self):
-        r = Region(Chromosome.CHR_1, 100, 200)
-        assert r.chr == Chromosome.CHR_1
+        r = Region(Chromosome.CHR1, 100, 200)
+        assert r.chr == Chromosome.CHR1
 
     def test_region_start_gt_end_raises(self):
         with pytest.raises(ValueError, match="end.*must be >= start"):
@@ -108,7 +108,7 @@ class TestRegion:
 class TestBracket:
     def test_bracket_basic_construction(self):
         b = Bracket("chr1", 100, 200, 300, 400)
-        assert b.chr == Chromosome.CHR_1
+        assert b.chr == Chromosome.CHR1
         assert b.start_min == 100
         assert b.start_max == 200
         assert b.end_min == 300
@@ -248,7 +248,7 @@ class TestAnnotationFilter:
 class TestVariant:
     def test_variant_construction(self):
         v = Variant(
-            chr=Chromosome.CHR_1,
+            chr=Chromosome.CHR1,
             start=100,
             end=100,
             ref="A",
@@ -256,12 +256,15 @@ class TestVariant:
             af=0.05,
             ac=10.0,
             an=200,
-            homc=2,
-            hetc=6,
-            misc=0,
-            homfc=1,
-            hetfc=3,
-            misfc=0,
+            hom_samples=2,
+            het_samples=6,
+            mis_samples=0,
+            hom_samples_fx=1,
+            het_samples_fx=3,
+            mis_samples_fx=0,
+            hom_samples_mxy=4,
+            het_samples_mxy=5,
+            mis_samples_mxy=1,
             gnomad_exomes_af=0.04,
             gnomad_genomes_af=0.03,
             cadd_raw=1.5,
@@ -270,7 +273,7 @@ class TestVariant:
             amino_acids="A/T",
             biallelic=True,
         )
-        assert v.chr == Chromosome.CHR_1
+        assert v.chr == Chromosome.CHR1
         assert v.start == 100
         assert v.end == 100
         assert v.ref == "A"
@@ -278,12 +281,15 @@ class TestVariant:
         assert v.af == 0.05
         assert v.ac == 10.0
         assert v.an == 200
-        assert v.homc == 2
-        assert v.hetc == 6
-        assert v.misc == 0
-        assert v.homfc == 1
-        assert v.hetfc == 3
-        assert v.misfc == 0
+        assert v.hom_samples == 2
+        assert v.het_samples == 6
+        assert v.mis_samples == 0
+        assert v.hom_samples_fx == 1
+        assert v.het_samples_fx == 3
+        assert v.mis_samples_fx == 0
+        assert v.hom_samples_mxy == 4
+        assert v.het_samples_mxy == 5
+        assert v.mis_samples_mxy == 1
         assert v.gnomad_exomes_af == 0.04
         assert v.gnomad_genomes_af == 0.03
         assert v.cadd_raw == 1.5
@@ -294,9 +300,10 @@ class TestVariant:
 
     def test_variant_frozen(self):
         v = Variant(
-            chr=Chromosome.CHR_1, start=100, end=100, ref="A", alt="T",
-            af=0.05, ac=10.0, an=200, homc=2, hetc=6, misc=0, homfc=1,
-            hetfc=3, misfc=0, gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
+            chr=Chromosome.CHR1, start=100, end=100, ref="A", alt="T",
+            af=0.05, ac=10.0, an=200, hom_samples=2, het_samples=6, mis_samples=0, hom_samples_fx=1,
+            het_samples_fx=3, mis_samples_fx=0, hom_samples_mxy=0, het_samples_mxy=0, mis_samples_mxy=0,
+            gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
             cadd_raw=0.0, cadd_phred=0.0, am_score=0.0, amino_acids="",
             biallelic=True,
         )
@@ -307,22 +314,26 @@ class TestVariant:
 class TestVariantWithStats:
     def test_variant_with_stats_construction(self):
         vws = VariantWithStats(
-            chr=Chromosome.CHR_1, start=100, end=100, ref="A", alt="T",
-            af=0.05, ac=10.0, an=200, homc=2, hetc=6, misc=0, homfc=1,
-            hetfc=3, misfc=0, gnomad_exomes_af=0.04, gnomad_genomes_af=0.03,
+            chr=Chromosome.CHR1, start=100, end=100, ref="A", alt="T",
+            af=0.05, ac=10.0, an=200, hom_samples=2, het_samples=6, mis_samples=0, hom_samples_fx=1,
+            het_samples_fx=3, mis_samples_fx=0, hom_samples_mxy=4, het_samples_mxy=5, mis_samples_mxy=1,
+            gnomad_exomes_af=0.04, gnomad_genomes_af=0.03,
             cadd_raw=1.5, cadd_phred=15.0, am_score=0.7, amino_acids="A/T",
             biallelic=True,
-            vaf=0.1, vac=5.0, van=50, vhomc=1, vhetc=3, vhomfc=0, vhetfc=1,
+            vaf=0.1, vac=5.0, van=50, v_hom_samples=1, v_het_samples=3, v_hom_samples_fx=0, v_het_samples_fx=1,
+            v_hom_samples_mxy=2, v_het_samples_mxy=3,
             phwe=0.5, pchi2=0.01, odds_ratio=2.5, ibc=0.02,
         )
-        assert vws.chr == Chromosome.CHR_1
+        assert vws.chr == Chromosome.CHR1
         assert vws.vaf == 0.1
         assert vws.vac == 5.0
         assert vws.van == 50
-        assert vws.vhomc == 1
-        assert vws.vhetc == 3
-        assert vws.vhomfc == 0
-        assert vws.vhetfc == 1
+        assert vws.v_hom_samples == 1
+        assert vws.v_het_samples == 3
+        assert vws.v_hom_samples_fx == 0
+        assert vws.v_het_samples_fx == 1
+        assert vws.v_hom_samples_mxy == 2
+        assert vws.v_het_samples_mxy == 3
         assert vws.phwe == 0.5
         assert vws.pchi2 == 0.01
         assert vws.odds_ratio == 2.5
@@ -330,15 +341,17 @@ class TestVariantWithStats:
 
     def test_variant_with_stats_has_all_variant_fields(self):
         vws = VariantWithStats(
-            chr=Chromosome.CHR_X, start=50, end=60, ref="G", alt="C",
-            af=0.1, ac=20.0, an=200, homc=5, hetc=10, misc=2, homfc=2,
-            hetfc=4, misfc=1, gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
+            chr=Chromosome.CHRX, start=50, end=60, ref="G", alt="C",
+            af=0.1, ac=20.0, an=200, hom_samples=5, het_samples=10, mis_samples=2, hom_samples_fx=2,
+            het_samples_fx=4, mis_samples_fx=1, hom_samples_mxy=3, het_samples_mxy=2, mis_samples_mxy=1,
+            gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
             cadd_raw=0.0, cadd_phred=0.0, am_score=0.0, amino_acids="",
             biallelic=False,
-            vaf=0.0, vac=0.0, van=0, vhomc=0, vhetc=0, vhomfc=0, vhetfc=0,
+            vaf=0.0, vac=0.0, van=0, v_hom_samples=0, v_het_samples=0, v_hom_samples_fx=0, v_het_samples_fx=0,
+            v_hom_samples_mxy=0, v_het_samples_mxy=0,
             phwe=0.0, pchi2=0.0, odds_ratio=0.0, ibc=0.0,
         )
-        assert vws.chr == Chromosome.CHR_X
+        assert vws.chr == Chromosome.CHRX
         assert vws.start == 50
         assert vws.end == 60
         assert vws.ref == "G"
@@ -590,12 +603,14 @@ class TestSampleRelatedness:
 class TestTopHweResult:
     def test_top_hwe_result_construction(self):
         vws = VariantWithStats(
-            chr=Chromosome.CHR_1, start=100, end=100, ref="A", alt="T",
-            af=0.05, ac=10.0, an=200, homc=2, hetc=6, misc=0, homfc=1,
-            hetfc=3, misfc=0, gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
+            chr=Chromosome.CHR1, start=100, end=100, ref="A", alt="T",
+            af=0.05, ac=10.0, an=200, hom_samples=2, het_samples=6, mis_samples=0, hom_samples_fx=1,
+            het_samples_fx=3, mis_samples_fx=0, hom_samples_mxy=0, het_samples_mxy=0, mis_samples_mxy=0,
+            gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
             cadd_raw=0.0, cadd_phred=0.0, am_score=0.0, amino_acids="",
             biallelic=True,
-            vaf=0.0, vac=0.0, van=0, vhomc=0, vhetc=0, vhomfc=0, vhetfc=0,
+            vaf=0.0, vac=0.0, van=0, v_hom_samples=0, v_het_samples=0, v_hom_samples_fx=0, v_het_samples_fx=0,
+            v_hom_samples_mxy=0, v_het_samples_mxy=0,
             phwe=1e-10, pchi2=0.0, odds_ratio=0.0, ibc=0.0,
         )
         r = TopHweResult(variants=(vws,), metadata=_meta())
@@ -605,12 +620,14 @@ class TestTopHweResult:
 class TestTopChi2Result:
     def test_top_chi2_result_construction(self):
         vws = VariantWithStats(
-            chr=Chromosome.CHR_1, start=100, end=100, ref="A", alt="T",
-            af=0.05, ac=10.0, an=200, homc=2, hetc=6, misc=0, homfc=1,
-            hetfc=3, misfc=0, gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
+            chr=Chromosome.CHR1, start=100, end=100, ref="A", alt="T",
+            af=0.05, ac=10.0, an=200, hom_samples=2, het_samples=6, mis_samples=0, hom_samples_fx=1,
+            het_samples_fx=3, mis_samples_fx=0, hom_samples_mxy=0, het_samples_mxy=0, mis_samples_mxy=0,
+            gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
             cadd_raw=0.0, cadd_phred=0.0, am_score=0.0, amino_acids="",
             biallelic=True,
-            vaf=0.0, vac=0.0, van=0, vhomc=0, vhetc=0, vhomfc=0, vhetfc=0,
+            vaf=0.0, vac=0.0, van=0, v_hom_samples=0, v_het_samples=0, v_hom_samples_fx=0, v_het_samples_fx=0,
+            v_hom_samples_mxy=0, v_het_samples_mxy=0,
             phwe=0.0, pchi2=1e-5, odds_ratio=3.2, ibc=0.0,
         )
         r = TopChi2Result(variants=(vws,), metadata=_meta())

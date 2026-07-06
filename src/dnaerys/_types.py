@@ -246,11 +246,13 @@ class AnnotationFilter:
     af_gt : float | None
         Include variants with dataset allele frequency > this value.
     gnomad_exomes_af_lt : float | None
-        Include variants with gnomAD exomes AF < this value.
+        Include variants with gnomAD exomes AF < this value.  Note: unannotated
+        variants / those absent from gnomAD (gnomAD exomes AF = 0) are included.
     gnomad_exomes_af_gt : float | None
         Include variants with gnomAD exomes AF > this value.
     gnomad_genomes_af_lt : float | None
-        Include variants with gnomAD genomes AF < this value.
+        Include variants with gnomAD genomes AF < this value.  Note: unannotated
+        variants / those absent from gnomAD (gnomAD genomes AF = 0) are included.
     gnomad_genomes_af_gt : float | None
         Include variants with gnomAD genomes AF > this value.
     sift : Sequence[SIFT | str]
@@ -416,18 +418,30 @@ class Variant:
         chromosomes outside PAR in males are counted as 0.5.
     an : int
         Dataset allele number (excludes samples with missing genotypes).
-    homc : int
-        Homozygous allele count.
-    hetc : int
-        Heterozygous allele count.
-    misc : int
-        Missing (no-call) allele count.
-    homfc : int
-        Homozygous allele count in females (sex chromosomes).
-    hetfc : int
-        Heterozygous allele count in females (sex chromosomes).
-    misfc : int
-        Missing allele count in females (sex chromosomes).
+    hom_samples : int
+        Number of all samples with a homozygous genotype.
+    het_samples : int
+        Number of all samples with a heterozygous genotype.
+    mis_samples : int
+        Number of all samples with a missing (no-call) genotype.
+    hom_samples_fx : int
+        Number of female samples with a homozygous genotype in the X
+        chromosome only; 0 outside X.
+    het_samples_fx : int
+        Number of female samples with a heterozygous genotype in the X
+        chromosome only; 0 outside X.
+    mis_samples_fx : int
+        Number of female samples with a missing (no-call) genotype in the X
+        chromosome only; 0 outside X.
+    hom_samples_mxy : int
+        Number of male samples with a homozygous genotype in the X & Y
+        chromosomes only; 0 outside X and Y.
+    het_samples_mxy : int
+        Number of male samples with a heterozygous genotype in the X & Y
+        chromosomes only; 0 outside X and Y.
+    mis_samples_mxy : int
+        Number of male samples with a missing (no-call) genotype in the X & Y
+        chromosomes only; 0 outside X and Y.
     gnomad_exomes_af : float
         gnomAD exomes allele frequency.  0.0 = not annotated.
         Proto field: ``gnomADe``.
@@ -454,12 +468,15 @@ class Variant:
     af: float
     ac: float
     an: int
-    homc: int
-    hetc: int
-    misc: int
-    homfc: int
-    hetfc: int
-    misfc: int
+    hom_samples: int
+    het_samples: int
+    mis_samples: int
+    hom_samples_fx: int
+    het_samples_fx: int
+    mis_samples_fx: int
+    hom_samples_mxy: int
+    het_samples_mxy: int
+    mis_samples_mxy: int
     gnomad_exomes_af: float
     gnomad_genomes_af: float
     cadd_raw: float
@@ -493,14 +510,22 @@ class VariantWithStats:
         Virtual cohort allele count.
     van : int
         Virtual cohort allele number.
-    vhomc : int
-        Virtual cohort homozygous count.
-    vhetc : int
-        Virtual cohort heterozygous count.
-    vhomfc : int
-        Virtual cohort female homozygous count.
-    vhetfc : int
-        Virtual cohort female heterozygous count.
+    v_hom_samples : int
+        Number of samples with a homozygous genotype within the virtual cohort.
+    v_het_samples : int
+        Number of samples with a heterozygous genotype within the virtual cohort.
+    v_hom_samples_fx : int
+        Number of female samples with a homozygous genotype in the X chromosome
+        only within the virtual cohort; 0 outside X.
+    v_het_samples_fx : int
+        Number of female samples with a heterozygous genotype in the X chromosome
+        only within the virtual cohort; 0 outside X.
+    v_hom_samples_mxy : int
+        Number of male samples with a homozygous genotype in the X & Y
+        chromosomes only within the virtual cohort; 0 outside X and Y.
+    v_het_samples_mxy : int
+        Number of male samples with a heterozygous genotype in the X & Y
+        chromosomes only within the virtual cohort; 0 outside X and Y.
     phwe : float
         P-value for Hardy-Weinberg equilibrium chi-squared test.
     pchi2 : float
@@ -519,12 +544,15 @@ class VariantWithStats:
     af: float
     ac: float
     an: int
-    homc: int
-    hetc: int
-    misc: int
-    homfc: int
-    hetfc: int
-    misfc: int
+    hom_samples: int
+    het_samples: int
+    mis_samples: int
+    hom_samples_fx: int
+    het_samples_fx: int
+    mis_samples_fx: int
+    hom_samples_mxy: int
+    het_samples_mxy: int
+    mis_samples_mxy: int
     gnomad_exomes_af: float
     gnomad_genomes_af: float
     cadd_raw: float
@@ -535,10 +563,12 @@ class VariantWithStats:
     vaf: float
     vac: float
     van: int
-    vhomc: int
-    vhetc: int
-    vhomfc: int
-    vhetfc: int
+    v_hom_samples: int
+    v_het_samples: int
+    v_hom_samples_fx: int
+    v_het_samples_fx: int
+    v_hom_samples_mxy: int
+    v_het_samples_mxy: int
     phwe: float
     pchi2: float
     odds_ratio: float
@@ -735,6 +765,12 @@ class DatasetInfo:
         Server-side wall-clock time in milliseconds.
     node_id : str
         Node that served the response.
+    max_variants_per_ring : int
+        Hard cap on the number of variants each individual ring returns per
+        request.  A query may request fewer, but never more, from any one ring.
+        ``0`` if the server did not advertise a cap (older servers); the client
+        then falls back to a built-in default.  Used internally to size
+        pagination buffers and strong-``limit`` batches so results are complete.
     """
 
     cohorts: tuple[Cohort, ...]
@@ -751,6 +787,7 @@ class DatasetInfo:
     rings_total: int
     elapsed_ms: int
     node_id: str
+    max_variants_per_ring: int = 0
 
 
 @dataclass(frozen=True, slots=True)

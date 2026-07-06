@@ -48,12 +48,15 @@ class PaginatedQuery:
     page_size : int
         Number of variants per page (last page may be shorter).
     buffer_size : int
-        Number of variants to request per server round-trip.
+        Per-ring window requested per server round-trip.  Must be ``<=`` the
+        server per-ring cap so every owner ring is walked without gaps; it may
+        be smaller than *page_size* (a page is assembled from as many
+        round-trips as needed).
 
     Raises
     ------
     ValueError
-        If *page_size* < 1 or *buffer_size* < *page_size*.
+        If *page_size* < 1 or *buffer_size* < 1.
     """
 
     def __init__(
@@ -65,8 +68,8 @@ class PaginatedQuery:
     ) -> None:
         if page_size < 1:
             raise ValueError("page_size must be >= 1")
-        if buffer_size < page_size:
-            raise ValueError("buffer_size must be >= page_size")
+        if buffer_size < 1:
+            raise ValueError("buffer_size must be >= 1")
 
         self._fetch = fetch
         self._page_size = page_size

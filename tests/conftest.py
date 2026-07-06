@@ -21,7 +21,7 @@ from dnaerys import DnaerysClient
 def make_variant_proto(**overrides) -> pb2.Variant:
     """Create a pb2.Variant with sensible defaults.  Override any field via kwargs."""
     defaults = {
-        "chr": pb2.CHR_1,
+        "chr": pb2.CHR1,
         "start": 100,
         "end": 100,
         "ref": "A",
@@ -29,12 +29,15 @@ def make_variant_proto(**overrides) -> pb2.Variant:
         "af": 0.5,
         "ac": 1.0,
         "an": 2,
-        "homc": 0,
-        "hetc": 1,
-        "misc": 0,
-        "homfc": 0,
-        "hetfc": 0,
-        "misfc": 0,
+        "hom_samples": 0,
+        "het_samples": 1,
+        "mis_samples": 0,
+        "hom_samples_fx": 0,
+        "het_samples_fx": 0,
+        "mis_samples_fx": 0,
+        "hom_samples_mxy": 0,
+        "het_samples_mxy": 0,
+        "mis_samples_mxy": 0,
         "gnomADe": 0.01,
         "gnomADg": 0.02,
         "cadd_raw": 1.5,
@@ -53,7 +56,9 @@ def make_variant_with_stats_proto(**overrides) -> pb2.VariantWithStats:
     stats_overrides = {}
     variant_keys = {
         "chr", "start", "end", "ref", "alt", "af", "ac", "an",
-        "homc", "hetc", "misc", "homfc", "hetfc", "misfc",
+        "hom_samples", "het_samples", "mis_samples",
+        "hom_samples_fx", "het_samples_fx", "mis_samples_fx",
+        "hom_samples_mxy", "het_samples_mxy", "mis_samples_mxy",
         "gnomADe", "gnomADg", "cadd_raw", "cadd_phred", "am_score",
         "amino_acids", "biallelic",
     }
@@ -67,10 +72,12 @@ def make_variant_with_stats_proto(**overrides) -> pb2.VariantWithStats:
         "vaf": 0.5,
         "vac": 1.0,
         "van": 2,
-        "vhomc": 0,
-        "vhetc": 1,
-        "vhomfc": 0,
-        "vhetfc": 0,
+        "v_hom_samples": 0,
+        "v_het_samples": 1,
+        "v_hom_samples_fx": 0,
+        "v_het_samples_fx": 0,
+        "v_hom_samples_mxy": 0,
+        "v_het_samples_mxy": 0,
         "phwe": 1.0,
         "pchi2": 0.5,
         "ibc": 0.0,
@@ -153,6 +160,15 @@ class FakeDnaerysServicer(dnaerys_pb2_grpc.DnaerysServiceServicer):
         self.variant_with_stats_chunks: list[pb2.AllelesWithStatsResponse] = [
             make_alleles_with_stats_response(n_variants=2),
         ]
+        # Ring-simulation mode: when `rings`/`stats_rings` is set, streaming RPCs
+        # honour the request's per-ring `skip`/`limit` and the server `ring_cap`,
+        # modelling the real cluster (data partitioned across owner rings, no
+        # duplication, each ring's response hard-capped). Used to test pagination
+        # completeness and strong-limit batching. `None` -> static-chunk mode.
+        self.rings: list[list[pb2.Variant]] | None = None
+        self.stats_rings: list[list[pb2.VariantWithStats]] | None = None
+        self.ring_cap: int | None = None
+        self.chunk_size: int = 50
         self.count_response = pb2.CountAllelesResponse(
             count=42, elapsed_ms=5, elapsed_db_ms=2, node_id="node-1",
         )
@@ -250,11 +266,78 @@ class FakeDnaerysServicer(dnaerys_pb2_grpc.DnaerysServiceServicer):
         self._maybe_error_or_sleep(context)
         return self.dataset_info_response
 
+    # -- Ring-simulation helpers --
+
+    def configure_rings(self, ring_sizes, *, cap=None, chunk_size=50, start_base=1000):
+        """Populate per-owner-ring variant partitions honouring skip/limit/cap.
+
+        ``ring_sizes[i]`` variants go to ring ``i``; every variant gets a
+        globally-unique ``start`` (disjoint ranges per ring) so callers can
+        detect gaps/duplicates by inspecting the set of returned ``start``
+        positions.  ``cap`` is the server per-ring hard limit and is also
+        advertised through ``dataset_info`` so the client discovers it.
+        """
+        self.ring_cap = cap
+        self.chunk_size = chunk_size
+        self.rings = []
+        pos = start_base
+        for size in ring_sizes:
+            self.rings.append(
+                [make_variant_proto(start=pos + j, end=pos + j) for j in range(size)]
+            )
+            pos += size + 10  # keep each ring's start range disjoint
+        if cap is not None:
+            self.dataset_info_response.max_variants_per_ring = cap
+
+    def configure_stats_rings(self, ring_sizes, *, cap=None, chunk_size=50, start_base=1000):
+        """Like :meth:`configure_rings` but for the with-stats streaming path."""
+        self.ring_cap = cap
+        self.chunk_size = chunk_size
+        self.stats_rings = []
+        pos = start_base
+        for size in ring_sizes:
+            self.stats_rings.append(
+                [make_variant_with_stats_proto(start=pos + j, end=pos + j) for j in range(size)]
+            )
+            pos += size + 10
+        if cap is not None:
+            self.dataset_info_response.max_variants_per_ring = cap
+
+    def _window_bounds(self, request):
+        """Return (skip, window) applying the request limit and the server cap."""
+        skip = getattr(request, "skip", 0) or 0
+        req_limit = getattr(request, "limit", 0) or 0
+        window = req_limit if req_limit and req_limit > 0 else (1 << 31) - 1
+        if self.ring_cap is not None:
+            window = min(window, self.ring_cap)
+        return skip, window
+
+    def _yield_ring_chunks(self, request, rings, response_cls):
+        """Yield per-ring windowed chunks + a terminal empty (receiver) chunk."""
+        skip, window = self._window_bounds(request)
+        for ring_idx, ring in enumerate(rings):
+            win = ring[skip:skip + window]
+            for i in range(0, len(win), self.chunk_size):
+                yield response_cls(
+                    variants=win[i:i + self.chunk_size],
+                    incomplete_cluster=False, affected=False,
+                    elapsed_ms=10, elapsed_db_ms=5, node_id=f"ring-{ring_idx}",
+                )
+        # Terminal empty chunk stamped by the receiving ring (models the relay);
+        # a batch that yields only this chunk signals all rings are exhausted.
+        yield response_cls(
+            variants=[], incomplete_cluster=False, affected=False,
+            elapsed_ms=10, elapsed_db_ms=5, node_id="receiver",
+        )
+
     # -- Variant streaming RPCs (yield from variant_chunks) --
 
     def _yield_variant_chunks(self, request, context):
         self.last_request = request
         self._maybe_error_or_sleep(context)
+        if self.rings is not None:
+            yield from self._yield_ring_chunks(request, self.rings, pb2.AllelesResponse)
+            return
         yield from self.variant_chunks
 
     def SelectVariantsInRegion(self, request, context):
@@ -280,6 +363,11 @@ class FakeDnaerysServicer(dnaerys_pb2_grpc.DnaerysServiceServicer):
     def _yield_variant_with_stats_chunks(self, request, context):
         self.last_request = request
         self._maybe_error_or_sleep(context)
+        if self.stats_rings is not None:
+            yield from self._yield_ring_chunks(
+                request, self.stats_rings, pb2.AllelesWithStatsResponse,
+            )
+            return
         yield from self.variant_with_stats_chunks
 
     def SelectVariantsInRegionInSamplesWithStats(self, request, context):

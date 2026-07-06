@@ -4,7 +4,7 @@ This library provides a Pythonic interface to the Dnaerys gRPC service,
 which offers high-performance variant and sample queries over indexed
 genomic datasets.
 
-Proto version: R1.17.8
+Proto version: R1.20.0
 """
 
 from dnaerys._enums import (
@@ -67,7 +67,7 @@ from dnaerys._types import (
     VariantWithStats,
 )
 
-PROTO_VERSION: str = "R1.17.8"
+PROTO_VERSION: str = "R1.20.0"
 """Protocol buffer schema version that this library targets."""
 
 __all__ = [

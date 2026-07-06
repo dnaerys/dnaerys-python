@@ -116,7 +116,7 @@ Sample queries
 
        # Select homozygous reference samples
        result = client.select_samples_hom_ref(
-           chr=Chromosome.CHR_17, position=7661841,
+           chr=Chromosome.CHR17, position=7661841,
        )
        print(f"Hom-ref samples: {result.samples}")
 

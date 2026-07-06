@@ -181,7 +181,7 @@ class VariantStream:
         Returns
         -------
         pandas.DataFrame
-            DataFrame with 21 columns matching the ``Variant`` fields.
+            DataFrame with 24 columns matching the ``Variant`` fields.
             The ``chr`` column contains human-readable strings
             (``"chr1"``, ``"chrX"``, ``"chrMT"``), not enum int values.
 
@@ -211,12 +211,15 @@ class VariantStream:
             "af": [v.af for v in variants],
             "ac": [v.ac for v in variants],
             "an": [v.an for v in variants],
-            "homc": [v.homc for v in variants],
-            "hetc": [v.hetc for v in variants],
-            "misc": [v.misc for v in variants],
-            "homfc": [v.homfc for v in variants],
-            "hetfc": [v.hetfc for v in variants],
-            "misfc": [v.misfc for v in variants],
+            "hom_samples": [v.hom_samples for v in variants],
+            "het_samples": [v.het_samples for v in variants],
+            "mis_samples": [v.mis_samples for v in variants],
+            "hom_samples_fx": [v.hom_samples_fx for v in variants],
+            "het_samples_fx": [v.het_samples_fx for v in variants],
+            "mis_samples_fx": [v.mis_samples_fx for v in variants],
+            "hom_samples_mxy": [v.hom_samples_mxy for v in variants],
+            "het_samples_mxy": [v.het_samples_mxy for v in variants],
+            "mis_samples_mxy": [v.mis_samples_mxy for v in variants],
             "gnomad_exomes_af": [v.gnomad_exomes_af for v in variants],
             "gnomad_genomes_af": [v.gnomad_genomes_af for v in variants],
             "cadd_raw": [v.cadd_raw for v in variants],
@@ -234,8 +237,8 @@ class VariantWithStatsStream:
 
     Same semantics as ``VariantStream`` but wraps
     ``Iterable[pb2.AllelesWithStatsResponse]`` and yields
-    ``VariantWithStats`` dataclass instances with 32 fields (21 variant +
-    11 statistics).
+    ``VariantWithStats`` dataclass instances with 37 fields (24 variant +
+    13 statistics).
 
     Metadata accumulation, warning emission, and terminal operation rules
     are identical to ``VariantStream``.
@@ -357,7 +360,7 @@ class VariantWithStatsStream:
         Returns
         -------
         pandas.DataFrame
-            DataFrame with 32 columns matching the ``VariantWithStats`` fields.
+            DataFrame with 37 columns matching the ``VariantWithStats`` fields.
             The ``chr`` column contains human-readable strings.
 
         Raises
@@ -386,12 +389,15 @@ class VariantWithStatsStream:
             "af": [v.af for v in variants],
             "ac": [v.ac for v in variants],
             "an": [v.an for v in variants],
-            "homc": [v.homc for v in variants],
-            "hetc": [v.hetc for v in variants],
-            "misc": [v.misc for v in variants],
-            "homfc": [v.homfc for v in variants],
-            "hetfc": [v.hetfc for v in variants],
-            "misfc": [v.misfc for v in variants],
+            "hom_samples": [v.hom_samples for v in variants],
+            "het_samples": [v.het_samples for v in variants],
+            "mis_samples": [v.mis_samples for v in variants],
+            "hom_samples_fx": [v.hom_samples_fx for v in variants],
+            "het_samples_fx": [v.het_samples_fx for v in variants],
+            "mis_samples_fx": [v.mis_samples_fx for v in variants],
+            "hom_samples_mxy": [v.hom_samples_mxy for v in variants],
+            "het_samples_mxy": [v.het_samples_mxy for v in variants],
+            "mis_samples_mxy": [v.mis_samples_mxy for v in variants],
             "gnomad_exomes_af": [v.gnomad_exomes_af for v in variants],
             "gnomad_genomes_af": [v.gnomad_genomes_af for v in variants],
             "cadd_raw": [v.cadd_raw for v in variants],
@@ -402,10 +408,12 @@ class VariantWithStatsStream:
             "vaf": [v.vaf for v in variants],
             "vac": [v.vac for v in variants],
             "van": [v.van for v in variants],
-            "vhomc": [v.vhomc for v in variants],
-            "vhetc": [v.vhetc for v in variants],
-            "vhomfc": [v.vhomfc for v in variants],
-            "vhetfc": [v.vhetfc for v in variants],
+            "v_hom_samples": [v.v_hom_samples for v in variants],
+            "v_het_samples": [v.v_het_samples for v in variants],
+            "v_hom_samples_fx": [v.v_hom_samples_fx for v in variants],
+            "v_het_samples_fx": [v.v_het_samples_fx for v in variants],
+            "v_hom_samples_mxy": [v.v_hom_samples_mxy for v in variants],
+            "v_het_samples_mxy": [v.v_het_samples_mxy for v in variants],
             "phwe": [v.phwe for v in variants],
             "pchi2": [v.pchi2 for v in variants],
             "odds_ratio": [v.odds_ratio for v in variants],
@@ -421,9 +429,9 @@ class VariantWithStatsStream:
 
 # Chromosome enum → human-readable string display mapping
 _CHR_DISPLAY: dict[Chromosome, str] = {
-    Chromosome.CHR_MT: "chrMT",
-    Chromosome.CHR_X: "chrX",
-    Chromosome.CHR_Y: "chrY",
+    Chromosome.CHRMT: "chrMT",
+    Chromosome.CHRX: "chrX",
+    Chromosome.CHRY: "chrY",
 }
 for _i in range(1, 23):
     _CHR_DISPLAY[Chromosome(_i)] = f"chr{_i}"
@@ -435,7 +443,7 @@ def _chr_display(c: Chromosome) -> str:
 
 
 def _apply_variant_dtypes(df: object, pd: object) -> object:
-    """Apply the specified dtypes to a Variant DataFrame (21 columns)."""
+    """Apply the specified dtypes to a Variant DataFrame (24 columns)."""
     return df.astype({
         "chr": "object",
         "start": "int32",
@@ -445,12 +453,15 @@ def _apply_variant_dtypes(df: object, pd: object) -> object:
         "af": "float32",
         "ac": "float32",
         "an": "int32",
-        "homc": "int32",
-        "hetc": "int32",
-        "misc": "int32",
-        "homfc": "int32",
-        "hetfc": "int32",
-        "misfc": "int32",
+        "hom_samples": "int32",
+        "het_samples": "int32",
+        "mis_samples": "int32",
+        "hom_samples_fx": "int32",
+        "het_samples_fx": "int32",
+        "mis_samples_fx": "int32",
+        "hom_samples_mxy": "int32",
+        "het_samples_mxy": "int32",
+        "mis_samples_mxy": "int32",
         "gnomad_exomes_af": "float32",
         "gnomad_genomes_af": "float32",
         "cadd_raw": "float32",
@@ -462,7 +473,7 @@ def _apply_variant_dtypes(df: object, pd: object) -> object:
 
 
 def _apply_variant_with_stats_dtypes(df: object, pd: object) -> object:
-    """Apply the specified dtypes to a VariantWithStats DataFrame (32 columns)."""
+    """Apply the specified dtypes to a VariantWithStats DataFrame (37 columns)."""
     return df.astype({
         "chr": "object",
         "start": "int32",
@@ -472,12 +483,15 @@ def _apply_variant_with_stats_dtypes(df: object, pd: object) -> object:
         "af": "float32",
         "ac": "float32",
         "an": "int32",
-        "homc": "int32",
-        "hetc": "int32",
-        "misc": "int32",
-        "homfc": "int32",
-        "hetfc": "int32",
-        "misfc": "int32",
+        "hom_samples": "int32",
+        "het_samples": "int32",
+        "mis_samples": "int32",
+        "hom_samples_fx": "int32",
+        "het_samples_fx": "int32",
+        "mis_samples_fx": "int32",
+        "hom_samples_mxy": "int32",
+        "het_samples_mxy": "int32",
+        "mis_samples_mxy": "int32",
         "gnomad_exomes_af": "float32",
         "gnomad_genomes_af": "float32",
         "cadd_raw": "float32",
@@ -488,10 +502,12 @@ def _apply_variant_with_stats_dtypes(df: object, pd: object) -> object:
         "vaf": "float32",
         "vac": "float32",
         "van": "int32",
-        "vhomc": "int32",
-        "vhetc": "int32",
-        "vhomfc": "int32",
-        "vhetfc": "int32",
+        "v_hom_samples": "int32",
+        "v_het_samples": "int32",
+        "v_hom_samples_fx": "int32",
+        "v_het_samples_fx": "int32",
+        "v_hom_samples_mxy": "int32",
+        "v_het_samples_mxy": "int32",
         "phwe": "float32",
         "pchi2": "float32",
         "odds_ratio": "float32",
@@ -503,7 +519,9 @@ def _make_empty_variant_dataframe(pd: object) -> object:
     """Create an empty DataFrame with correct Variant column dtypes."""
     df = pd.DataFrame(columns=[
         "chr", "start", "end", "ref", "alt", "af", "ac", "an",
-        "homc", "hetc", "misc", "homfc", "hetfc", "misfc",
+        "hom_samples", "het_samples", "mis_samples",
+        "hom_samples_fx", "het_samples_fx", "mis_samples_fx",
+        "hom_samples_mxy", "het_samples_mxy", "mis_samples_mxy",
         "gnomad_exomes_af", "gnomad_genomes_af", "cadd_raw", "cadd_phred",
         "am_score", "amino_acids", "biallelic",
     ])
@@ -514,10 +532,15 @@ def _make_empty_variant_with_stats_dataframe(pd: object) -> object:
     """Create an empty DataFrame with correct VariantWithStats column dtypes."""
     df = pd.DataFrame(columns=[
         "chr", "start", "end", "ref", "alt", "af", "ac", "an",
-        "homc", "hetc", "misc", "homfc", "hetfc", "misfc",
+        "hom_samples", "het_samples", "mis_samples",
+        "hom_samples_fx", "het_samples_fx", "mis_samples_fx",
+        "hom_samples_mxy", "het_samples_mxy", "mis_samples_mxy",
         "gnomad_exomes_af", "gnomad_genomes_af", "cadd_raw", "cadd_phred",
         "am_score", "amino_acids", "biallelic",
-        "vaf", "vac", "van", "vhomc", "vhetc", "vhomfc", "vhetfc",
+        "vaf", "vac", "van",
+        "v_hom_samples", "v_het_samples",
+        "v_hom_samples_fx", "v_het_samples_fx",
+        "v_hom_samples_mxy", "v_het_samples_mxy",
         "phwe", "pchi2", "odds_ratio", "ibc",
     ])
     return _apply_variant_with_stats_dtypes(df, pd)

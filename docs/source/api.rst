@@ -203,6 +203,6 @@ Constants
 
 .. data:: dnaerys.PROTO_VERSION
    :type: str
-   :value: "R1.17.8"
+   :value: "R1.20.0"
 
    Protocol buffer schema version that this library targets.

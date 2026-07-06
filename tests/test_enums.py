@@ -28,34 +28,34 @@ from dnaerys._enums import (
 
 class TestResolveChromosome:
     def test_resolve_chromosome_chr_prefix(self):
-        assert resolve_chromosome("chr1") == Chromosome.CHR_1
+        assert resolve_chromosome("chr1") == Chromosome.CHR1
 
     def test_resolve_chromosome_number_only(self):
-        assert resolve_chromosome("1") == Chromosome.CHR_1
+        assert resolve_chromosome("1") == Chromosome.CHR1
 
     def test_resolve_chromosome_uppercase(self):
-        assert resolve_chromosome("CHR_1") == Chromosome.CHR_1
+        assert resolve_chromosome("CHR1") == Chromosome.CHR1
 
     def test_resolve_chromosome_sex_x(self):
-        assert resolve_chromosome("X") == Chromosome.CHR_X
+        assert resolve_chromosome("X") == Chromosome.CHRX
 
     def test_resolve_chromosome_sex_chrx(self):
-        assert resolve_chromosome("chrX") == Chromosome.CHR_X
+        assert resolve_chromosome("chrX") == Chromosome.CHRX
 
     def test_resolve_chromosome_mt(self):
-        assert resolve_chromosome("MT") == Chromosome.CHR_MT
+        assert resolve_chromosome("MT") == Chromosome.CHRMT
 
     def test_resolve_chromosome_chrmt(self):
-        assert resolve_chromosome("chrMT") == Chromosome.CHR_MT
+        assert resolve_chromosome("chrMT") == Chromosome.CHRMT
 
     def test_resolve_chromosome_case_insensitive(self):
-        assert resolve_chromosome("Chr1") == Chromosome.CHR_1
+        assert resolve_chromosome("Chr1") == Chromosome.CHR1
 
     def test_resolve_chromosome_enum_passthrough(self):
-        assert resolve_chromosome(Chromosome.CHR_1) == Chromosome.CHR_1
+        assert resolve_chromosome(Chromosome.CHR1) == Chromosome.CHR1
 
     def test_resolve_chromosome_int_passthrough(self):
-        assert resolve_chromosome(1) == Chromosome.CHR_1
+        assert resolve_chromosome(1) == Chromosome.CHR1
 
     def test_resolve_chromosome_invalid_string(self):
         with pytest.raises(ValueError, match="Unknown chromosome"):
@@ -66,7 +66,7 @@ class TestResolveChromosome:
             resolve_chromosome("")
 
     def test_resolve_chromosome_y(self):
-        assert resolve_chromosome("Y") == Chromosome.CHR_Y
+        assert resolve_chromosome("Y") == Chromosome.CHRY
 
     def test_resolve_chromosome_all_numeric(self):
         for i in range(1, 23):
@@ -188,7 +188,7 @@ class TestEnumMemberCounts:
 
 class TestIntEnumInterop:
     def test_chromosome_int_value(self):
-        assert int(Chromosome.CHR_1) == 1
+        assert int(Chromosome.CHR1) == 1
 
     def test_consequence_int_value(self):
         assert int(Consequence.MISSENSE_VARIANT) == 11

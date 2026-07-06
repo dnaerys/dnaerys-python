@@ -53,6 +53,7 @@ from dnaerys._enums import (
     resolve_enum,
 )
 from dnaerys._exceptions import (
+    DnaerysError,
     DnaerysIncompleteResultWarning,
     DnaerysInvalidRequestError,
     raise_for_grpc_error,
@@ -80,6 +81,11 @@ from dnaerys._types import (
 )
 
 
+#: Fallback per-ring variant cap used when the server does not advertise one
+#: (older servers) or is unreachable when the cap is first needed.
+_DEFAULT_MAX_VARIANTS_PER_RING = 5000
+
+
 def _warn_affected(metadata: object) -> None:
     """Emit DnaerysIncompleteResultWarning if metadata.affected is True."""
     if getattr(metadata, "affected", False):
@@ -89,6 +95,41 @@ def _warn_affected(metadata: object) -> None:
             DnaerysIncompleteResultWarning,
             stacklevel=3,
         )
+
+
+def _chained_batches(raw_fetch, window):
+    """Yield raw response chunks from successive per-ring windows.
+
+    Each cluster ring caps its response at a hard server-side limit and applies
+    ``skip``/``limit`` **per ring**.  Requesting a constant ``window`` (which is
+    ``<=`` the server cap and is sent as the server ``limit``) at
+    ``skip = 0, window, 2*window, …`` walks every owner ring's partition in
+    contiguous, gap-free windows.  A batch that delivers zero variants means all
+    rings are exhausted, so iteration stops.
+
+    The consuming stream's own ``limit`` cap stops iteration early once the
+    caller's global limit is reached — so batches beyond that point are never
+    requested (lazy).
+
+    Parameters
+    ----------
+    raw_fetch : Callable[[int, int], Iterable]
+        Returns the raw gRPC chunk iterator for one ``(skip, window)`` request.
+    window : int
+        Per-ring window size, ``<=`` the server per-ring cap.  ``<= 0`` yields
+        nothing.
+    """
+    if window <= 0:
+        return
+    skip = 0
+    while True:
+        delivered = 0
+        for chunk in raw_fetch(skip, window):
+            delivered += len(chunk.variants)
+            yield chunk
+        if delivered == 0:
+            return
+        skip += window
 
 
 class DnaerysClient:
@@ -132,6 +173,7 @@ class DnaerysClient:
         self._default_timeout = default_timeout
         self._channel = create_channel(target, tls=tls, credentials=credentials, options=options)
         self._stub = dnaerys_pb2_grpc.DnaerysServiceStub(self._channel)
+        self._cap_cache: int | None = None
 
     # -- Context manager ----------------------------------------------------
 
@@ -154,6 +196,64 @@ class DnaerysClient:
         if assembly is None:
             return self._assembly
         return resolve_assembly(assembly) if isinstance(assembly, str) else assembly
+
+    def _max_variants_per_ring(self) -> int:
+        """Return the server's per-ring variant cap, cached after first lookup.
+
+        Queried once from :meth:`dataset_info` and reused for the client's
+        lifetime.  Falls back to ``_DEFAULT_MAX_VARIANTS_PER_RING`` when the
+        server does not advertise a cap (older servers report ``0``) or is
+        unreachable at first use.
+        """
+        if self._cap_cache is None:
+            cap = _DEFAULT_MAX_VARIANTS_PER_RING
+            try:
+                reported = self.dataset_info().max_variants_per_ring
+                if reported and reported > 0:
+                    cap = reported
+            except DnaerysError:
+                pass  # unreachable / no cap advertised — keep the fallback
+            self._cap_cache = cap
+        return self._cap_cache
+
+    def _resolve_buffer_size(self, buffer_size: int | None) -> int:
+        """Resolve and validate a pagination ``buffer_size`` against the cap.
+
+        ``None`` resolves to the server per-ring cap.  A value above the cap is
+        clamped (with a warning): a per-ring window larger than the cap would
+        leave gaps between pages, because each ring returns at most ``cap``
+        variants while pagination advances ``skip`` by the requested window.
+        """
+        cap = self._max_variants_per_ring()
+        if buffer_size is None:
+            return cap
+        if buffer_size < 1:
+            raise ValueError("buffer_size must be >= 1")
+        if buffer_size > cap:
+            warnings.warn(
+                f"buffer_size={buffer_size} exceeds the server per-ring cap "
+                f"({cap}); clamping to {cap} to keep paginated results complete.",
+                stacklevel=3,
+            )
+            return cap
+        return buffer_size
+
+    def _capped_stream(self, stream_cls, raw_fetch, limit: int | None):
+        """Build a stream honouring the global ``limit`` contract.
+
+        ``raw_fetch(skip, window)`` returns a raw gRPC chunk iterator.
+
+        - ``limit is None``: a single request.  Each ring returns up to its
+          server-side cap, so the result may hold up to ``cap * owner_rings``
+          variants and, for very large regions, be truncated.
+        - ``limit`` an int: internal ``skip``-batched requests with a per-ring
+          window of ``min(limit, cap)``, keeping every ring's full window, with
+          a hard global cap of ``limit`` enforced client-side by the stream.
+        """
+        if limit is None:
+            return stream_cls(raw_fetch(None, None), limit=None)
+        window = min(limit, self._max_variants_per_ring())
+        return stream_cls(_chained_batches(raw_fetch, window), limit=limit)
 
     # ======================================================================
     # Infrastructure (3 methods)
@@ -199,41 +299,47 @@ class DnaerysClient:
     # Variant queries (3 methods)
     # ======================================================================
 
-    def _select_variants(
+    def _variants_raw_fetch(
         self,
         *,
-        skip: int | None,
-        limit: int | None,
-        region: Region | None = None,
-        regions: list[Region] | None = None,
-        bracket: Bracket | None = None,
-        samples: list[str] | None = None,
-        hom: bool = True,
-        het: bool = True,
-        annotations: AnnotationFilter | None = None,
-        variant_min_length: int | None = None,
-        variant_max_length: int | None = None,
-        assembly: RefAssembly | str | None = None,
-        timeout: float | None = None,
-    ) -> VariantStream:
-        """Select variants (internal, keeps skip+limit for pagination)."""
-        raw_iter = dispatch_select_variants(
-            self._stub,
-            region=region,
-            regions=regions,
-            bracket=bracket,
-            samples=samples,
-            hom=hom,
-            het=het,
-            annotations=annotations,
-            assembly=self._asm(assembly),
-            variant_min_length=variant_min_length,
-            variant_max_length=variant_max_length,
-            skip=skip,
-            limit=limit,
-            timeout=self._timeout(timeout),
-        )
-        return VariantStream(raw_iter, limit=limit)
+        region: Region | None,
+        regions: list[Region] | None,
+        bracket: Bracket | None,
+        samples: list[str] | None,
+        hom: bool,
+        het: bool,
+        annotations: AnnotationFilter | None,
+        variant_min_length: int | None,
+        variant_max_length: int | None,
+        assembly: RefAssembly | str | None,
+        timeout: float | None,
+    ):
+        """Return a ``raw_fetch(skip, limit)`` closure for select-variants RPCs.
+
+        The closure issues one request and returns the raw gRPC chunk iterator.
+        ``skip``/``limit`` are the server's per-ring paging controls.
+        """
+        asm = self._asm(assembly)
+        to = self._timeout(timeout)
+
+        def raw_fetch(skip: int | None, limit: int | None):
+            return dispatch_select_variants(
+                self._stub,
+                region=region,
+                regions=regions,
+                bracket=bracket,
+                samples=samples,
+                hom=hom,
+                het=het,
+                annotations=annotations,
+                assembly=asm,
+                variant_min_length=variant_min_length,
+                variant_max_length=variant_max_length,
+                skip=skip,
+                limit=limit,
+                timeout=to,
+            )
+        return raw_fetch
 
     def select_variants(
         self,
@@ -251,28 +357,32 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> VariantStream:
-        """Select variants matching the given criteria (streaming)."""
-        return self._select_variants(
-            skip=None,
-            limit=limit,
-            region=region,
-            regions=regions,
-            bracket=bracket,
-            samples=samples,
-            hom=hom,
-            het=het,
-            annotations=annotations,
+        """Select variants matching the given criteria (streaming).
+
+        ``limit`` is a hard **global** cap on the total number of variants
+        returned.  Because the cluster caps each ring's response, the library
+        fetches results in internal ``skip``-batched requests, so ``limit`` may
+        safely exceed the server's per-ring cap and is still honoured exactly.
+
+        When ``limit`` is ``None`` a single request is issued and each ring
+        returns up to its server-side cap, so for very large regions the result
+        may be truncated — pass a ``limit`` or use :meth:`paginate_variants` to
+        retrieve everything.
+        """
+        raw_fetch = self._variants_raw_fetch(
+            region=region, regions=regions, bracket=bracket, samples=samples,
+            hom=hom, het=het, annotations=annotations,
             variant_min_length=variant_min_length,
             variant_max_length=variant_max_length,
-            assembly=assembly,
-            timeout=timeout,
+            assembly=assembly, timeout=timeout,
         )
+        return self._capped_stream(VariantStream, raw_fetch, limit)
 
     def paginate_variants(
         self,
         *,
         page_size: int,
-        buffer_size: int = 5000,
+        buffer_size: int | None = None,
         region: Region | None = None,
         regions: list[Region] | None = None,
         bracket: Bracket | None = None,
@@ -285,52 +395,62 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> PaginatedQuery:
-        """Create a paginated query for variants."""
-        def fetch(skip: int, limit: int) -> VariantStream:
-            return self._select_variants(
-                skip=skip, limit=limit,
-                region=region, regions=regions, bracket=bracket,
-                samples=samples, hom=hom, het=het,
-                annotations=annotations,
-                variant_min_length=variant_min_length,
-                variant_max_length=variant_max_length,
-                assembly=assembly, timeout=timeout,
-            )
-        return PaginatedQuery(fetch, page_size=page_size, buffer_size=buffer_size)
+        """Create a paginated query for variants.
 
-    def _select_variants_with_stats(
-        self,
-        *,
-        skip: int | None,
-        limit: int | None,
-        region: Region | None = None,
-        regions: list[Region] | None = None,
-        samples: list[str] | None = None,
-        hom: bool = True,
-        het: bool = True,
-        annotations: AnnotationFilter | None = None,
-        variant_min_length: int | None = None,
-        variant_max_length: int | None = None,
-        assembly: RefAssembly | str | None = None,
-        timeout: float | None = None,
-    ) -> VariantWithStatsStream:
-        """Select variants with stats (internal, keeps skip+limit for pagination)."""
-        raw_iter = dispatch_select_variants_with_stats(
-            self._stub,
-            region=region,
-            regions=regions,
-            samples=samples,
-            hom=hom,
-            het=het,
-            annotations=annotations,
-            assembly=self._asm(assembly),
+        ``buffer_size`` is the per-ring window requested each server round-trip.
+        It defaults to (and is capped at) the server's per-ring limit so every
+        ring is walked without gaps; a larger value is clamped down.
+        """
+        buffer_size = self._resolve_buffer_size(buffer_size)
+        raw_fetch = self._variants_raw_fetch(
+            region=region, regions=regions, bracket=bracket, samples=samples,
+            hom=hom, het=het, annotations=annotations,
             variant_min_length=variant_min_length,
             variant_max_length=variant_max_length,
-            skip=skip,
-            limit=limit,
-            timeout=self._timeout(timeout),
+            assembly=assembly, timeout=timeout,
         )
-        return VariantWithStatsStream(raw_iter, limit=limit)
+
+        def fetch(skip: int, limit: int) -> VariantStream:
+            # Uncapped: keep every owner ring's full window; PaginatedQuery
+            # advances skip by buffer_size to walk each ring gap-free.
+            return VariantStream(raw_fetch(skip, limit), limit=None)
+        return PaginatedQuery(fetch, page_size=page_size, buffer_size=buffer_size)
+
+    def _variants_with_stats_raw_fetch(
+        self,
+        *,
+        region: Region | None,
+        regions: list[Region] | None,
+        samples: list[str] | None,
+        hom: bool,
+        het: bool,
+        annotations: AnnotationFilter | None,
+        variant_min_length: int | None,
+        variant_max_length: int | None,
+        assembly: RefAssembly | str | None,
+        timeout: float | None,
+    ):
+        """Return a ``raw_fetch(skip, limit)`` closure for the with-stats RPCs."""
+        asm = self._asm(assembly)
+        to = self._timeout(timeout)
+
+        def raw_fetch(skip: int | None, limit: int | None):
+            return dispatch_select_variants_with_stats(
+                self._stub,
+                region=region,
+                regions=regions,
+                samples=samples,
+                hom=hom,
+                het=het,
+                annotations=annotations,
+                assembly=asm,
+                variant_min_length=variant_min_length,
+                variant_max_length=variant_max_length,
+                skip=skip,
+                limit=limit,
+                timeout=to,
+            )
+        return raw_fetch
 
     def select_variants_with_stats(
         self,
@@ -352,27 +472,26 @@ class DnaerysClient:
         Accepts a single ``region`` or a list of ``regions``, with or
         without ``samples``.  A single region without samples is
         automatically routed to the multi-region RPC transparently.
+
+        ``limit`` is a hard **global** cap enforced via internal ``skip``-
+        batched requests, so it may exceed the server per-ring cap.  With
+        ``limit=None`` a single request is issued and each ring returns up to
+        its cap (possibly truncated for very large regions).
         """
-        return self._select_variants_with_stats(
-            skip=None,
-            limit=limit,
-            region=region,
-            regions=regions,
-            samples=samples,
-            hom=hom,
-            het=het,
-            annotations=annotations,
+        raw_fetch = self._variants_with_stats_raw_fetch(
+            region=region, regions=regions, samples=samples,
+            hom=hom, het=het, annotations=annotations,
             variant_min_length=variant_min_length,
             variant_max_length=variant_max_length,
-            assembly=assembly,
-            timeout=timeout,
+            assembly=assembly, timeout=timeout,
         )
+        return self._capped_stream(VariantWithStatsStream, raw_fetch, limit)
 
     def paginate_variants_with_stats(
         self,
         *,
         page_size: int,
-        buffer_size: int = 5000,
+        buffer_size: int | None = None,
         region: Region | None = None,
         regions: list[Region] | None = None,
         samples: list[str] | None = None,
@@ -384,17 +503,22 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> PaginatedQuery:
-        """Create a paginated query for variants with statistics."""
+        """Create a paginated query for variants with statistics.
+
+        ``buffer_size`` defaults to (and is capped at) the server's per-ring
+        limit so every ring is walked without gaps.
+        """
+        buffer_size = self._resolve_buffer_size(buffer_size)
+        raw_fetch = self._variants_with_stats_raw_fetch(
+            region=region, regions=regions, samples=samples,
+            hom=hom, het=het, annotations=annotations,
+            variant_min_length=variant_min_length,
+            variant_max_length=variant_max_length,
+            assembly=assembly, timeout=timeout,
+        )
+
         def fetch(skip: int, limit: int) -> VariantWithStatsStream:
-            return self._select_variants_with_stats(
-                skip=skip, limit=limit,
-                region=region, regions=regions,
-                samples=samples, hom=hom, het=het,
-                annotations=annotations,
-                variant_min_length=variant_min_length,
-                variant_max_length=variant_max_length,
-                assembly=assembly, timeout=timeout,
-            )
+            return VariantWithStatsStream(raw_fetch(skip, limit), limit=None)
         return PaginatedQuery(fetch, page_size=page_size, buffer_size=buffer_size)
 
     def count_variants(
@@ -598,31 +722,32 @@ class DnaerysClient:
             kw["limit"] = limit
         return kw
 
-    def _select_de_novo(
+    def _de_novo_raw_fetch(
         self,
         *,
-        skip: int | None,
-        limit: int | None,
         parent1: str,
         parent2: str,
         proband: str,
         region: Region,
-        annotations: AnnotationFilter | None = None,
-        variant_min_length: int | None = None,
-        variant_max_length: int | None = None,
-        assembly: RefAssembly | str | None = None,
-        timeout: float | None = None,
-    ) -> VariantStream:
-        """Select de novo variants (internal, keeps skip+limit for pagination)."""
-        kw = self._build_inheritance_kwargs(
-            region, annotations, variant_min_length, variant_max_length,
-            skip, limit, assembly,
-        )
-        request = pb2.DeNovoRequest(
-            parent1=parent1, parent2=parent2, proband=proband, **kw,
-        )
-        raw_iter = self._stub.SelectDeNovo(request, timeout=self._timeout(timeout))
-        return VariantStream(raw_iter, limit=limit)
+        annotations: AnnotationFilter | None,
+        variant_min_length: int | None,
+        variant_max_length: int | None,
+        assembly: RefAssembly | str | None,
+        timeout: float | None,
+    ):
+        """Return a ``raw_fetch(skip, limit)`` closure for the de novo RPC."""
+        to = self._timeout(timeout)
+
+        def raw_fetch(skip: int | None, limit: int | None):
+            kw = self._build_inheritance_kwargs(
+                region, annotations, variant_min_length, variant_max_length,
+                skip, limit, assembly,
+            )
+            request = pb2.DeNovoRequest(
+                parent1=parent1, parent2=parent2, proband=proband, **kw,
+            )
+            return self._stub.SelectDeNovo(request, timeout=to)
+        return raw_fetch
 
     def select_de_novo(
         self,
@@ -638,21 +763,25 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> VariantStream:
-        """Select de novo candidate variants in a proband (streaming)."""
-        return self._select_de_novo(
-            skip=None, limit=limit,
+        """Select de novo candidate variants in a proband (streaming).
+
+        ``limit`` is a hard global cap enforced via internal ``skip``-batched
+        requests, so it may exceed the server per-ring cap.
+        """
+        raw_fetch = self._de_novo_raw_fetch(
             parent1=parent1, parent2=parent2, proband=proband,
             region=region, annotations=annotations,
             variant_min_length=variant_min_length,
             variant_max_length=variant_max_length,
             assembly=assembly, timeout=timeout,
         )
+        return self._capped_stream(VariantStream, raw_fetch, limit)
 
     def paginate_de_novo(
         self,
         *,
         page_size: int,
-        buffer_size: int = 5000,
+        buffer_size: int | None = None,
         parent1: str,
         parent2: str,
         proband: str,
@@ -663,46 +792,52 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> PaginatedQuery:
-        """Create a paginated query for de novo candidate variants."""
+        """Create a paginated query for de novo candidate variants.
+
+        ``buffer_size`` defaults to (and is capped at) the server per-ring limit.
+        """
+        buffer_size = self._resolve_buffer_size(buffer_size)
+        raw_fetch = self._de_novo_raw_fetch(
+            parent1=parent1, parent2=parent2, proband=proband,
+            region=region, annotations=annotations,
+            variant_min_length=variant_min_length,
+            variant_max_length=variant_max_length,
+            assembly=assembly, timeout=timeout,
+        )
+
         def fetch(skip: int, limit: int) -> VariantStream:
-            return self._select_de_novo(
-                skip=skip, limit=limit,
-                parent1=parent1, parent2=parent2, proband=proband,
-                region=region, annotations=annotations,
-                variant_min_length=variant_min_length,
-                variant_max_length=variant_max_length,
-                assembly=assembly, timeout=timeout,
-            )
+            return VariantStream(raw_fetch(skip, limit), limit=None)
         return PaginatedQuery(fetch, page_size=page_size, buffer_size=buffer_size)
 
-    def _select_het_dominant(
+    def _het_dominant_raw_fetch(
         self,
         *,
-        skip: int | None,
-        limit: int | None,
         affected_parent: str,
         unaffected_parent: str,
         affected_child: str,
         region: Region,
-        annotations: AnnotationFilter | None = None,
-        variant_min_length: int | None = None,
-        variant_max_length: int | None = None,
-        assembly: RefAssembly | str | None = None,
-        timeout: float | None = None,
-    ) -> VariantStream:
-        """Select het dominant variants (internal, keeps skip+limit for pagination)."""
-        kw = self._build_inheritance_kwargs(
-            region, annotations, variant_min_length, variant_max_length,
-            skip, limit, assembly,
-        )
-        request = pb2.HetDominantRequest(
-            affected_parent=affected_parent,
-            unaffected_parent=unaffected_parent,
-            affected_child=affected_child,
-            **kw,
-        )
-        raw_iter = self._stub.SelectHetDominant(request, timeout=self._timeout(timeout))
-        return VariantStream(raw_iter, limit=limit)
+        annotations: AnnotationFilter | None,
+        variant_min_length: int | None,
+        variant_max_length: int | None,
+        assembly: RefAssembly | str | None,
+        timeout: float | None,
+    ):
+        """Return a ``raw_fetch(skip, limit)`` closure for the het dominant RPC."""
+        to = self._timeout(timeout)
+
+        def raw_fetch(skip: int | None, limit: int | None):
+            kw = self._build_inheritance_kwargs(
+                region, annotations, variant_min_length, variant_max_length,
+                skip, limit, assembly,
+            )
+            request = pb2.HetDominantRequest(
+                affected_parent=affected_parent,
+                unaffected_parent=unaffected_parent,
+                affected_child=affected_child,
+                **kw,
+            )
+            return self._stub.SelectHetDominant(request, timeout=to)
+        return raw_fetch
 
     def select_het_dominant(
         self,
@@ -718,9 +853,12 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> VariantStream:
-        """Select heterozygous dominant candidate variants (streaming)."""
-        return self._select_het_dominant(
-            skip=None, limit=limit,
+        """Select heterozygous dominant candidate variants (streaming).
+
+        ``limit`` is a hard global cap enforced via internal ``skip``-batched
+        requests, so it may exceed the server per-ring cap.
+        """
+        raw_fetch = self._het_dominant_raw_fetch(
             affected_parent=affected_parent,
             unaffected_parent=unaffected_parent,
             affected_child=affected_child,
@@ -729,12 +867,13 @@ class DnaerysClient:
             variant_max_length=variant_max_length,
             assembly=assembly, timeout=timeout,
         )
+        return self._capped_stream(VariantStream, raw_fetch, limit)
 
     def paginate_het_dominant(
         self,
         *,
         page_size: int,
-        buffer_size: int = 5000,
+        buffer_size: int | None = None,
         affected_parent: str,
         unaffected_parent: str,
         affected_child: str,
@@ -745,48 +884,54 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> PaginatedQuery:
-        """Create a paginated query for heterozygous dominant candidate variants."""
+        """Create a paginated query for heterozygous dominant candidate variants.
+
+        ``buffer_size`` defaults to (and is capped at) the server per-ring limit.
+        """
+        buffer_size = self._resolve_buffer_size(buffer_size)
+        raw_fetch = self._het_dominant_raw_fetch(
+            affected_parent=affected_parent,
+            unaffected_parent=unaffected_parent,
+            affected_child=affected_child,
+            region=region, annotations=annotations,
+            variant_min_length=variant_min_length,
+            variant_max_length=variant_max_length,
+            assembly=assembly, timeout=timeout,
+        )
+
         def fetch(skip: int, limit: int) -> VariantStream:
-            return self._select_het_dominant(
-                skip=skip, limit=limit,
-                affected_parent=affected_parent,
-                unaffected_parent=unaffected_parent,
-                affected_child=affected_child,
-                region=region, annotations=annotations,
-                variant_min_length=variant_min_length,
-                variant_max_length=variant_max_length,
-                assembly=assembly, timeout=timeout,
-            )
+            return VariantStream(raw_fetch(skip, limit), limit=None)
         return PaginatedQuery(fetch, page_size=page_size, buffer_size=buffer_size)
 
-    def _select_hom_recessive(
+    def _hom_recessive_raw_fetch(
         self,
         *,
-        skip: int | None,
-        limit: int | None,
         unaffected_parent1: str,
         unaffected_parent2: str,
         affected_child: str,
         region: Region,
-        annotations: AnnotationFilter | None = None,
-        variant_min_length: int | None = None,
-        variant_max_length: int | None = None,
-        assembly: RefAssembly | str | None = None,
-        timeout: float | None = None,
-    ) -> VariantStream:
-        """Select hom recessive variants (internal, keeps skip+limit for pagination)."""
-        kw = self._build_inheritance_kwargs(
-            region, annotations, variant_min_length, variant_max_length,
-            skip, limit, assembly,
-        )
-        request = pb2.HomRecessiveRequest(
-            unaffected_parent1=unaffected_parent1,
-            unaffected_parent2=unaffected_parent2,
-            affected_child=affected_child,
-            **kw,
-        )
-        raw_iter = self._stub.SelectHomRecessive(request, timeout=self._timeout(timeout))
-        return VariantStream(raw_iter, limit=limit)
+        annotations: AnnotationFilter | None,
+        variant_min_length: int | None,
+        variant_max_length: int | None,
+        assembly: RefAssembly | str | None,
+        timeout: float | None,
+    ):
+        """Return a ``raw_fetch(skip, limit)`` closure for the hom recessive RPC."""
+        to = self._timeout(timeout)
+
+        def raw_fetch(skip: int | None, limit: int | None):
+            kw = self._build_inheritance_kwargs(
+                region, annotations, variant_min_length, variant_max_length,
+                skip, limit, assembly,
+            )
+            request = pb2.HomRecessiveRequest(
+                unaffected_parent1=unaffected_parent1,
+                unaffected_parent2=unaffected_parent2,
+                affected_child=affected_child,
+                **kw,
+            )
+            return self._stub.SelectHomRecessive(request, timeout=to)
+        return raw_fetch
 
     def select_hom_recessive(
         self,
@@ -802,9 +947,12 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> VariantStream:
-        """Select homozygous recessive candidate variants (streaming)."""
-        return self._select_hom_recessive(
-            skip=None, limit=limit,
+        """Select homozygous recessive candidate variants (streaming).
+
+        ``limit`` is a hard global cap enforced via internal ``skip``-batched
+        requests, so it may exceed the server per-ring cap.
+        """
+        raw_fetch = self._hom_recessive_raw_fetch(
             unaffected_parent1=unaffected_parent1,
             unaffected_parent2=unaffected_parent2,
             affected_child=affected_child,
@@ -813,12 +961,13 @@ class DnaerysClient:
             variant_max_length=variant_max_length,
             assembly=assembly, timeout=timeout,
         )
+        return self._capped_stream(VariantStream, raw_fetch, limit)
 
     def paginate_hom_recessive(
         self,
         *,
         page_size: int,
-        buffer_size: int = 5000,
+        buffer_size: int | None = None,
         unaffected_parent1: str,
         unaffected_parent2: str,
         affected_child: str,
@@ -829,18 +978,23 @@ class DnaerysClient:
         assembly: RefAssembly | str | None = None,
         timeout: float | None = None,
     ) -> PaginatedQuery:
-        """Create a paginated query for homozygous recessive candidate variants."""
+        """Create a paginated query for homozygous recessive candidate variants.
+
+        ``buffer_size`` defaults to (and is capped at) the server per-ring limit.
+        """
+        buffer_size = self._resolve_buffer_size(buffer_size)
+        raw_fetch = self._hom_recessive_raw_fetch(
+            unaffected_parent1=unaffected_parent1,
+            unaffected_parent2=unaffected_parent2,
+            affected_child=affected_child,
+            region=region, annotations=annotations,
+            variant_min_length=variant_min_length,
+            variant_max_length=variant_max_length,
+            assembly=assembly, timeout=timeout,
+        )
+
         def fetch(skip: int, limit: int) -> VariantStream:
-            return self._select_hom_recessive(
-                skip=skip, limit=limit,
-                unaffected_parent1=unaffected_parent1,
-                unaffected_parent2=unaffected_parent2,
-                affected_child=affected_child,
-                region=region, annotations=annotations,
-                variant_min_length=variant_min_length,
-                variant_max_length=variant_max_length,
-                assembly=assembly, timeout=timeout,
-            )
+            return VariantStream(raw_fetch(skip, limit), limit=None)
         return PaginatedQuery(fetch, page_size=page_size, buffer_size=buffer_size)
 
     # ======================================================================

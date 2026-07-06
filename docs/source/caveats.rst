@@ -38,9 +38,17 @@ On :meth:`~dnaerys.DnaerysClient.select_variants`,
 methods (:meth:`~dnaerys.DnaerysClient.select_de_novo`,
 :meth:`~dnaerys.DnaerysClient.select_het_dominant`,
 :meth:`~dnaerys.DnaerysClient.select_hom_recessive`), ``limit`` is a
-**hard global cap** enforced client-side by the stream wrapper. You will receive
-at most ``limit`` results regardless of cluster topology. The value is also
-forwarded to the server as a performance hint.
+**hard global cap**. You receive at most ``limit`` results regardless of cluster
+topology. Each ring hard-caps its own per-request response, so the
+client fetches in internal constant-window batches and trims to exactly
+``limit`` — meaning ``limit`` may **exceed** a ring's per-request cap and is
+still honoured (e.g. ``limit=50000`` works even where each ring returns at most
+5000 per request).
+
+When ``limit=None`` a single request is issued and **each ring returns up to its
+per-ring cap** (``DatasetInfo.max_variants_per_ring``, default 5000).
+Results for large regions are therefore **truncated** — pass a ``limit`` or use
+``paginate_*`` to retrieve everything.
 
 On :meth:`~dnaerys.DnaerysClient.select_samples` (and
 :meth:`~dnaerys.DnaerysClient.select_samples_hom_ref`), ``skip`` and ``limit``

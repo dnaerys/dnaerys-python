@@ -5,7 +5,7 @@ import warnings
 
 from . import dnaerys_pb2 as dnaerys__pb2
 
-GRPC_GENERATED_VERSION = '1.78.0'
+GRPC_GENERATED_VERSION = '1.81.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class DnaerysServiceStub(object):
+class DnaerysServiceStub:
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -216,7 +216,7 @@ class DnaerysServiceStub(object):
                 _registered_method=True)
 
 
-class DnaerysServiceServicer(object):
+class DnaerysServiceServicer:
     """Missing associated documentation comment in .proto file."""
 
     def Health(self, request, context):
@@ -495,7 +495,7 @@ class DnaerysServiceServicer(object):
     def SexMismatchCheck(self, request, context):
         """"reported vs observed" sex mismatch check is based on F-statistics
         for deviation from expected number of homozygous alleles performed
-        on biallelic SNVs on X chromosome outside PAR. The same method is
+        on biallelic SNVs in X chromosome outside PAR. The same method is
         used in Hail 0.2 and Plink 1.7, parameters have similar meaning.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -741,7 +741,7 @@ def add_DnaerysServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class DnaerysService(object):
+class DnaerysService:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod

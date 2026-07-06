@@ -16,31 +16,31 @@ class RefAssembly(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 class Chromosome(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     CHROMOSOME_UNSPECIFIED: _ClassVar[Chromosome]
-    CHR_1: _ClassVar[Chromosome]
-    CHR_2: _ClassVar[Chromosome]
-    CHR_3: _ClassVar[Chromosome]
-    CHR_4: _ClassVar[Chromosome]
-    CHR_5: _ClassVar[Chromosome]
-    CHR_6: _ClassVar[Chromosome]
-    CHR_7: _ClassVar[Chromosome]
-    CHR_8: _ClassVar[Chromosome]
-    CHR_9: _ClassVar[Chromosome]
-    CHR_10: _ClassVar[Chromosome]
-    CHR_11: _ClassVar[Chromosome]
-    CHR_12: _ClassVar[Chromosome]
-    CHR_13: _ClassVar[Chromosome]
-    CHR_14: _ClassVar[Chromosome]
-    CHR_15: _ClassVar[Chromosome]
-    CHR_16: _ClassVar[Chromosome]
-    CHR_17: _ClassVar[Chromosome]
-    CHR_18: _ClassVar[Chromosome]
-    CHR_19: _ClassVar[Chromosome]
-    CHR_20: _ClassVar[Chromosome]
-    CHR_21: _ClassVar[Chromosome]
-    CHR_22: _ClassVar[Chromosome]
-    CHR_X: _ClassVar[Chromosome]
-    CHR_Y: _ClassVar[Chromosome]
-    CHR_MT: _ClassVar[Chromosome]
+    CHR1: _ClassVar[Chromosome]
+    CHR2: _ClassVar[Chromosome]
+    CHR3: _ClassVar[Chromosome]
+    CHR4: _ClassVar[Chromosome]
+    CHR5: _ClassVar[Chromosome]
+    CHR6: _ClassVar[Chromosome]
+    CHR7: _ClassVar[Chromosome]
+    CHR8: _ClassVar[Chromosome]
+    CHR9: _ClassVar[Chromosome]
+    CHR10: _ClassVar[Chromosome]
+    CHR11: _ClassVar[Chromosome]
+    CHR12: _ClassVar[Chromosome]
+    CHR13: _ClassVar[Chromosome]
+    CHR14: _ClassVar[Chromosome]
+    CHR15: _ClassVar[Chromosome]
+    CHR16: _ClassVar[Chromosome]
+    CHR17: _ClassVar[Chromosome]
+    CHR18: _ClassVar[Chromosome]
+    CHR19: _ClassVar[Chromosome]
+    CHR20: _ClassVar[Chromosome]
+    CHR21: _ClassVar[Chromosome]
+    CHR22: _ClassVar[Chromosome]
+    CHRX: _ClassVar[Chromosome]
+    CHRY: _ClassVar[Chromosome]
+    CHRMT: _ClassVar[Chromosome]
 
 class VariantType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
@@ -247,31 +247,31 @@ ASSEMBLY_UNSPECIFIED: RefAssembly
 GRCh37: RefAssembly
 GRCh38: RefAssembly
 CHROMOSOME_UNSPECIFIED: Chromosome
-CHR_1: Chromosome
-CHR_2: Chromosome
-CHR_3: Chromosome
-CHR_4: Chromosome
-CHR_5: Chromosome
-CHR_6: Chromosome
-CHR_7: Chromosome
-CHR_8: Chromosome
-CHR_9: Chromosome
-CHR_10: Chromosome
-CHR_11: Chromosome
-CHR_12: Chromosome
-CHR_13: Chromosome
-CHR_14: Chromosome
-CHR_15: Chromosome
-CHR_16: Chromosome
-CHR_17: Chromosome
-CHR_18: Chromosome
-CHR_19: Chromosome
-CHR_20: Chromosome
-CHR_21: Chromosome
-CHR_22: Chromosome
-CHR_X: Chromosome
-CHR_Y: Chromosome
-CHR_MT: Chromosome
+CHR1: Chromosome
+CHR2: Chromosome
+CHR3: Chromosome
+CHR4: Chromosome
+CHR5: Chromosome
+CHR6: Chromosome
+CHR7: Chromosome
+CHR8: Chromosome
+CHR9: Chromosome
+CHR10: Chromosome
+CHR11: Chromosome
+CHR12: Chromosome
+CHR13: Chromosome
+CHR14: Chromosome
+CHR15: Chromosome
+CHR16: Chromosome
+CHR17: Chromosome
+CHR18: Chromosome
+CHR19: Chromosome
+CHR20: Chromosome
+CHR21: Chromosome
+CHR22: Chromosome
+CHRX: Chromosome
+CHRY: Chromosome
+CHRMT: Chromosome
 VARIANTTYPE_UNSPECIFIED: VariantType
 SNV: VariantType
 INSERTION: VariantType
@@ -475,10 +475,10 @@ class DatasetInfoRequest(_message.Message):
     __slots__ = ("return_samples_names",)
     RETURN_SAMPLES_NAMES_FIELD_NUMBER: _ClassVar[int]
     return_samples_names: bool
-    def __init__(self, return_samples_names: bool = ...) -> None: ...
+    def __init__(self, return_samples_names: _Optional[bool] = ...) -> None: ...
 
 class DatasetInfoResponse(_message.Message):
-    __slots__ = ("cohorts", "samples_total", "females_total", "males_total", "variants_total", "assembly", "rto", "prs", "timestamp", "data_format", "notes", "rings_total", "elapsed_ms", "node_id")
+    __slots__ = ("cohorts", "samples_total", "females_total", "males_total", "variants_total", "assembly", "rto", "prs", "timestamp", "data_format", "notes", "rings_total", "elapsed_ms", "node_id", "max_variants_per_ring")
     COHORTS_FIELD_NUMBER: _ClassVar[int]
     SAMPLES_TOTAL_FIELD_NUMBER: _ClassVar[int]
     FEMALES_TOTAL_FIELD_NUMBER: _ClassVar[int]
@@ -493,6 +493,7 @@ class DatasetInfoResponse(_message.Message):
     RINGS_TOTAL_FIELD_NUMBER: _ClassVar[int]
     ELAPSED_MS_FIELD_NUMBER: _ClassVar[int]
     NODE_ID_FIELD_NUMBER: _ClassVar[int]
+    MAX_VARIANTS_PER_RING_FIELD_NUMBER: _ClassVar[int]
     cohorts: _containers.RepeatedCompositeFieldContainer[Cohort]
     samples_total: int
     females_total: int
@@ -507,7 +508,8 @@ class DatasetInfoResponse(_message.Message):
     rings_total: int
     elapsed_ms: int
     node_id: str
-    def __init__(self, cohorts: _Optional[_Iterable[_Union[Cohort, _Mapping]]] = ..., samples_total: _Optional[int] = ..., females_total: _Optional[int] = ..., males_total: _Optional[int] = ..., variants_total: _Optional[int] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., rto: bool = ..., prs: _Optional[_Iterable[_Union[PRS, _Mapping]]] = ..., timestamp: _Optional[str] = ..., data_format: _Optional[int] = ..., notes: _Optional[str] = ..., rings_total: _Optional[int] = ..., elapsed_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    max_variants_per_ring: int
+    def __init__(self, cohorts: _Optional[_Iterable[_Union[Cohort, _Mapping]]] = ..., samples_total: _Optional[int] = ..., females_total: _Optional[int] = ..., males_total: _Optional[int] = ..., variants_total: _Optional[int] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., rto: _Optional[bool] = ..., prs: _Optional[_Iterable[_Union[PRS, _Mapping]]] = ..., timestamp: _Optional[str] = ..., data_format: _Optional[int] = ..., notes: _Optional[str] = ..., rings_total: _Optional[int] = ..., elapsed_ms: _Optional[int] = ..., node_id: _Optional[str] = ..., max_variants_per_ring: _Optional[int] = ...) -> None: ...
 
 class Cohort(_message.Message):
     __slots__ = ("cohort_name", "samples_count", "female_count", "male_count", "female_samples_names", "male_samples_names", "synthetic")
@@ -525,7 +527,7 @@ class Cohort(_message.Message):
     female_samples_names: _containers.RepeatedScalarFieldContainer[str]
     male_samples_names: _containers.RepeatedScalarFieldContainer[str]
     synthetic: bool
-    def __init__(self, cohort_name: _Optional[str] = ..., samples_count: _Optional[int] = ..., female_count: _Optional[int] = ..., male_count: _Optional[int] = ..., female_samples_names: _Optional[_Iterable[str]] = ..., male_samples_names: _Optional[_Iterable[str]] = ..., synthetic: bool = ...) -> None: ...
+    def __init__(self, cohort_name: _Optional[str] = ..., samples_count: _Optional[int] = ..., female_count: _Optional[int] = ..., male_count: _Optional[int] = ..., female_samples_names: _Optional[_Iterable[str]] = ..., male_samples_names: _Optional[_Iterable[str]] = ..., synthetic: _Optional[bool] = ...) -> None: ...
 
 class PRS(_message.Message):
     __slots__ = ("name", "desc", "cardinality")
@@ -589,7 +591,7 @@ class Annotations(_message.Message):
     multiallelicOnly: bool
     excludeMales: bool
     excludeFemales: bool
-    def __init__(self, variant_type: _Optional[_Iterable[_Union[VariantType, str]]] = ..., feature_type: _Optional[_Iterable[_Union[FeatureType, str]]] = ..., bio_type: _Optional[_Iterable[_Union[BioType, str]]] = ..., consequence: _Optional[_Iterable[_Union[Consequence, str]]] = ..., impact: _Optional[_Iterable[_Union[Impact, str]]] = ..., clinsgn: _Optional[_Iterable[_Union[ClinSignificance, str]]] = ..., af_lt: _Optional[float] = ..., af_gt: _Optional[float] = ..., gnomad_exomes_af_lt: _Optional[float] = ..., gnomad_exomes_af_gt: _Optional[float] = ..., gnomad_genomes_af_lt: _Optional[float] = ..., gnomad_genomes_af_gt: _Optional[float] = ..., sift: _Optional[_Iterable[_Union[SIFT, str]]] = ..., polyphen: _Optional[_Iterable[_Union[PolyPhen, str]]] = ..., cadd_raw_lt: _Optional[float] = ..., cadd_raw_gt: _Optional[float] = ..., cadd_phred_lt: _Optional[float] = ..., cadd_phred_gt: _Optional[float] = ..., am_score_lt: _Optional[float] = ..., am_score_gt: _Optional[float] = ..., am_class: _Optional[_Iterable[_Union[AlphaMissense, str]]] = ..., biallelicOnly: bool = ..., multiallelicOnly: bool = ..., excludeMales: bool = ..., excludeFemales: bool = ...) -> None: ...
+    def __init__(self, variant_type: _Optional[_Iterable[_Union[VariantType, str]]] = ..., feature_type: _Optional[_Iterable[_Union[FeatureType, str]]] = ..., bio_type: _Optional[_Iterable[_Union[BioType, str]]] = ..., consequence: _Optional[_Iterable[_Union[Consequence, str]]] = ..., impact: _Optional[_Iterable[_Union[Impact, str]]] = ..., clinsgn: _Optional[_Iterable[_Union[ClinSignificance, str]]] = ..., af_lt: _Optional[float] = ..., af_gt: _Optional[float] = ..., gnomad_exomes_af_lt: _Optional[float] = ..., gnomad_exomes_af_gt: _Optional[float] = ..., gnomad_genomes_af_lt: _Optional[float] = ..., gnomad_genomes_af_gt: _Optional[float] = ..., sift: _Optional[_Iterable[_Union[SIFT, str]]] = ..., polyphen: _Optional[_Iterable[_Union[PolyPhen, str]]] = ..., cadd_raw_lt: _Optional[float] = ..., cadd_raw_gt: _Optional[float] = ..., cadd_phred_lt: _Optional[float] = ..., cadd_phred_gt: _Optional[float] = ..., am_score_lt: _Optional[float] = ..., am_score_gt: _Optional[float] = ..., am_class: _Optional[_Iterable[_Union[AlphaMissense, str]]] = ..., biallelicOnly: _Optional[bool] = ..., multiallelicOnly: _Optional[bool] = ..., excludeMales: _Optional[bool] = ..., excludeFemales: _Optional[bool] = ...) -> None: ...
 
 class AllelesInRegionRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "skip", "limit")
@@ -619,7 +621,7 @@ class AllelesInRegionRequest(_message.Message):
     variantMaxLength: int
     skip: int
     limit: int
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class AllelesInBracketRequest(_message.Message):
     __slots__ = ("chr", "start_min", "start_max", "end_min", "end_max", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "skip", "limit")
@@ -653,7 +655,7 @@ class AllelesInBracketRequest(_message.Message):
     variantMaxLength: int
     skip: int
     limit: int
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start_min: _Optional[int] = ..., start_max: _Optional[int] = ..., end_min: _Optional[int] = ..., end_max: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start_min: _Optional[int] = ..., start_max: _Optional[int] = ..., end_min: _Optional[int] = ..., end_max: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class AllelesInBracketInSamplesRequest(_message.Message):
     __slots__ = ("chr", "start_min", "start_max", "end_min", "end_max", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "samples", "skip", "limit")
@@ -689,7 +691,7 @@ class AllelesInBracketInSamplesRequest(_message.Message):
     samples: _containers.RepeatedScalarFieldContainer[str]
     skip: int
     limit: int
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start_min: _Optional[int] = ..., start_max: _Optional[int] = ..., end_min: _Optional[int] = ..., end_max: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start_min: _Optional[int] = ..., start_max: _Optional[int] = ..., end_min: _Optional[int] = ..., end_max: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class AllelesInRegionInSamplesRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "samples", "variantMinLength", "variantMaxLength", "skip", "limit")
@@ -721,7 +723,7 @@ class AllelesInRegionInSamplesRequest(_message.Message):
     variantMaxLength: int
     skip: int
     limit: int
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., samples: _Optional[_Iterable[str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., samples: _Optional[_Iterable[str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class AllelesInMultiRegionsRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "skip", "limit")
@@ -751,7 +753,7 @@ class AllelesInMultiRegionsRequest(_message.Message):
     variantMaxLength: int
     skip: int
     limit: int
-    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class AllelesInMultiRegionsInSamplesRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "samples", "variantMinLength", "variantMaxLength", "skip", "limit")
@@ -783,7 +785,7 @@ class AllelesInMultiRegionsInSamplesRequest(_message.Message):
     variantMaxLength: int
     skip: int
     limit: int
-    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., samples: _Optional[_Iterable[str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., samples: _Optional[_Iterable[str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class AllelesResponse(_message.Message):
     __slots__ = ("variants", "incomplete_cluster", "affected", "elapsed_ms", "elapsed_db_ms", "node_id")
@@ -799,10 +801,10 @@ class AllelesResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, variants: _Optional[_Iterable[_Union[Variant, _Mapping]]] = ..., incomplete_cluster: bool = ..., affected: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, variants: _Optional[_Iterable[_Union[Variant, _Mapping]]] = ..., incomplete_cluster: _Optional[bool] = ..., affected: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class Variant(_message.Message):
-    __slots__ = ("chr", "start", "end", "ref", "alt", "af", "ac", "an", "homc", "hetc", "misc", "homfc", "hetfc", "misfc", "gnomADe", "gnomADg", "cadd_raw", "cadd_phred", "am_score", "amino_acids", "biallelic")
+    __slots__ = ("chr", "start", "end", "ref", "alt", "af", "ac", "an", "hom_samples", "het_samples", "mis_samples", "hom_samples_fx", "het_samples_fx", "mis_samples_fx", "hom_samples_mxy", "het_samples_mxy", "mis_samples_mxy", "gnomADe", "gnomADg", "cadd_raw", "cadd_phred", "am_score", "amino_acids", "biallelic")
     CHR_FIELD_NUMBER: _ClassVar[int]
     START_FIELD_NUMBER: _ClassVar[int]
     END_FIELD_NUMBER: _ClassVar[int]
@@ -811,12 +813,15 @@ class Variant(_message.Message):
     AF_FIELD_NUMBER: _ClassVar[int]
     AC_FIELD_NUMBER: _ClassVar[int]
     AN_FIELD_NUMBER: _ClassVar[int]
-    HOMC_FIELD_NUMBER: _ClassVar[int]
-    HETC_FIELD_NUMBER: _ClassVar[int]
-    MISC_FIELD_NUMBER: _ClassVar[int]
-    HOMFC_FIELD_NUMBER: _ClassVar[int]
-    HETFC_FIELD_NUMBER: _ClassVar[int]
-    MISFC_FIELD_NUMBER: _ClassVar[int]
+    HOM_SAMPLES_FIELD_NUMBER: _ClassVar[int]
+    HET_SAMPLES_FIELD_NUMBER: _ClassVar[int]
+    MIS_SAMPLES_FIELD_NUMBER: _ClassVar[int]
+    HOM_SAMPLES_FX_FIELD_NUMBER: _ClassVar[int]
+    HET_SAMPLES_FX_FIELD_NUMBER: _ClassVar[int]
+    MIS_SAMPLES_FX_FIELD_NUMBER: _ClassVar[int]
+    HOM_SAMPLES_MXY_FIELD_NUMBER: _ClassVar[int]
+    HET_SAMPLES_MXY_FIELD_NUMBER: _ClassVar[int]
+    MIS_SAMPLES_MXY_FIELD_NUMBER: _ClassVar[int]
     GNOMADE_FIELD_NUMBER: _ClassVar[int]
     GNOMADG_FIELD_NUMBER: _ClassVar[int]
     CADD_RAW_FIELD_NUMBER: _ClassVar[int]
@@ -832,12 +837,15 @@ class Variant(_message.Message):
     af: float
     ac: float
     an: int
-    homc: int
-    hetc: int
-    misc: int
-    homfc: int
-    hetfc: int
-    misfc: int
+    hom_samples: int
+    het_samples: int
+    mis_samples: int
+    hom_samples_fx: int
+    het_samples_fx: int
+    mis_samples_fx: int
+    hom_samples_mxy: int
+    het_samples_mxy: int
+    mis_samples_mxy: int
     gnomADe: float
     gnomADg: float
     cadd_raw: float
@@ -845,7 +853,7 @@ class Variant(_message.Message):
     am_score: float
     amino_acids: str
     biallelic: bool
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., af: _Optional[float] = ..., ac: _Optional[float] = ..., an: _Optional[int] = ..., homc: _Optional[int] = ..., hetc: _Optional[int] = ..., misc: _Optional[int] = ..., homfc: _Optional[int] = ..., hetfc: _Optional[int] = ..., misfc: _Optional[int] = ..., gnomADe: _Optional[float] = ..., gnomADg: _Optional[float] = ..., cadd_raw: _Optional[float] = ..., cadd_phred: _Optional[float] = ..., am_score: _Optional[float] = ..., amino_acids: _Optional[str] = ..., biallelic: bool = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., af: _Optional[float] = ..., ac: _Optional[float] = ..., an: _Optional[int] = ..., hom_samples: _Optional[int] = ..., het_samples: _Optional[int] = ..., mis_samples: _Optional[int] = ..., hom_samples_fx: _Optional[int] = ..., het_samples_fx: _Optional[int] = ..., mis_samples_fx: _Optional[int] = ..., hom_samples_mxy: _Optional[int] = ..., het_samples_mxy: _Optional[int] = ..., mis_samples_mxy: _Optional[int] = ..., gnomADe: _Optional[float] = ..., gnomADg: _Optional[float] = ..., cadd_raw: _Optional[float] = ..., cadd_phred: _Optional[float] = ..., am_score: _Optional[float] = ..., amino_acids: _Optional[str] = ..., biallelic: _Optional[bool] = ...) -> None: ...
 
 class AllelesWithStatsResponse(_message.Message):
     __slots__ = ("variants", "incomplete_cluster", "affected", "elapsed_ms", "elapsed_db_ms", "node_id")
@@ -861,18 +869,20 @@ class AllelesWithStatsResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, variants: _Optional[_Iterable[_Union[VariantWithStats, _Mapping]]] = ..., incomplete_cluster: bool = ..., affected: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, variants: _Optional[_Iterable[_Union[VariantWithStats, _Mapping]]] = ..., incomplete_cluster: _Optional[bool] = ..., affected: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class VariantWithStats(_message.Message):
-    __slots__ = ("variant", "vaf", "vac", "van", "vhomc", "vhetc", "vhomfc", "vhetfc", "phwe", "pchi2", "ibc")
+    __slots__ = ("variant", "vaf", "vac", "van", "v_hom_samples", "v_het_samples", "v_hom_samples_fx", "v_het_samples_fx", "v_hom_samples_mxy", "v_het_samples_mxy", "phwe", "pchi2", "ibc")
     VARIANT_FIELD_NUMBER: _ClassVar[int]
     VAF_FIELD_NUMBER: _ClassVar[int]
     VAC_FIELD_NUMBER: _ClassVar[int]
     VAN_FIELD_NUMBER: _ClassVar[int]
-    VHOMC_FIELD_NUMBER: _ClassVar[int]
-    VHETC_FIELD_NUMBER: _ClassVar[int]
-    VHOMFC_FIELD_NUMBER: _ClassVar[int]
-    VHETFC_FIELD_NUMBER: _ClassVar[int]
+    V_HOM_SAMPLES_FIELD_NUMBER: _ClassVar[int]
+    V_HET_SAMPLES_FIELD_NUMBER: _ClassVar[int]
+    V_HOM_SAMPLES_FX_FIELD_NUMBER: _ClassVar[int]
+    V_HET_SAMPLES_FX_FIELD_NUMBER: _ClassVar[int]
+    V_HOM_SAMPLES_MXY_FIELD_NUMBER: _ClassVar[int]
+    V_HET_SAMPLES_MXY_FIELD_NUMBER: _ClassVar[int]
     PHWE_FIELD_NUMBER: _ClassVar[int]
     PCHI2_FIELD_NUMBER: _ClassVar[int]
     OR_FIELD_NUMBER: _ClassVar[int]
@@ -881,14 +891,16 @@ class VariantWithStats(_message.Message):
     vaf: float
     vac: float
     van: int
-    vhomc: int
-    vhetc: int
-    vhomfc: int
-    vhetfc: int
+    v_hom_samples: int
+    v_het_samples: int
+    v_hom_samples_fx: int
+    v_het_samples_fx: int
+    v_hom_samples_mxy: int
+    v_het_samples_mxy: int
     phwe: float
     pchi2: float
     ibc: float
-    def __init__(self, variant: _Optional[_Union[Variant, _Mapping]] = ..., vaf: _Optional[float] = ..., vac: _Optional[float] = ..., van: _Optional[int] = ..., vhomc: _Optional[int] = ..., vhetc: _Optional[int] = ..., vhomfc: _Optional[int] = ..., vhetfc: _Optional[int] = ..., phwe: _Optional[float] = ..., pchi2: _Optional[float] = ..., ibc: _Optional[float] = ..., **kwargs) -> None: ...
+    def __init__(self, variant: _Optional[_Union[Variant, _Mapping]] = ..., vaf: _Optional[float] = ..., vac: _Optional[float] = ..., van: _Optional[int] = ..., v_hom_samples: _Optional[int] = ..., v_het_samples: _Optional[int] = ..., v_hom_samples_fx: _Optional[int] = ..., v_het_samples_fx: _Optional[int] = ..., v_hom_samples_mxy: _Optional[int] = ..., v_het_samples_mxy: _Optional[int] = ..., phwe: _Optional[float] = ..., pchi2: _Optional[float] = ..., ibc: _Optional[float] = ..., **kwargs) -> None: ...
 
 class TopNchi2Request(_message.Message):
     __slots__ = ("n", "samples", "seq")
@@ -898,7 +910,7 @@ class TopNchi2Request(_message.Message):
     n: int
     samples: _containers.RepeatedScalarFieldContainer[str]
     seq: bool
-    def __init__(self, n: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ..., seq: bool = ...) -> None: ...
+    def __init__(self, n: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ..., seq: _Optional[bool] = ...) -> None: ...
 
 class TopNHWERequest(_message.Message):
     __slots__ = ("n", "seq")
@@ -906,7 +918,7 @@ class TopNHWERequest(_message.Message):
     SEQ_FIELD_NUMBER: _ClassVar[int]
     n: int
     seq: bool
-    def __init__(self, n: _Optional[int] = ..., seq: bool = ...) -> None: ...
+    def __init__(self, n: _Optional[int] = ..., seq: _Optional[bool] = ...) -> None: ...
 
 class SamplesInRegionRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "skip", "limit")
@@ -936,7 +948,7 @@ class SamplesInRegionRequest(_message.Message):
     variantMaxLength: int
     skip: int
     limit: int
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class SamplesInMultiRegionsRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "skip", "limit")
@@ -966,7 +978,7 @@ class SamplesInMultiRegionsRequest(_message.Message):
     variantMaxLength: int
     skip: int
     limit: int
-    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., skip: _Optional[int] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class SamplesHomRefRequest(_message.Message):
     __slots__ = ("chr", "position", "assembly", "skip", "limit")
@@ -996,7 +1008,7 @@ class SamplesResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, samples: _Optional[_Iterable[str]] = ..., incomplete_cluster: bool = ..., affected: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, samples: _Optional[_Iterable[str]] = ..., incomplete_cluster: _Optional[bool] = ..., affected: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class DeNovoRequest(_message.Message):
     __slots__ = ("parent1", "parent2", "proband", "chr", "start", "end", "ref", "alt", "ann", "assembly", "variantMinLength", "variantMaxLength", "skip", "limit")
@@ -1106,7 +1118,7 @@ class PRSRequest(_message.Message):
     samples: _containers.RepeatedScalarFieldContainer[str]
     dominant: bool
     recessive: bool
-    def __init__(self, prs_name: _Optional[str] = ..., cohort_name: _Optional[str] = ..., samples: _Optional[_Iterable[str]] = ..., dominant: bool = ..., recessive: bool = ...) -> None: ...
+    def __init__(self, prs_name: _Optional[str] = ..., cohort_name: _Optional[str] = ..., samples: _Optional[_Iterable[str]] = ..., dominant: _Optional[bool] = ..., recessive: _Optional[bool] = ...) -> None: ...
 
 class PRSResponse(_message.Message):
     __slots__ = ("prs_name", "sample_scores", "dominant", "recessive", "prs_cardinality", "incomplete_cluster", "elapsed_ms", "elapsed_db_ms", "node_id")
@@ -1128,7 +1140,7 @@ class PRSResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, prs_name: _Optional[str] = ..., sample_scores: _Optional[_Iterable[_Union[SampleScore, _Mapping]]] = ..., dominant: bool = ..., recessive: bool = ..., prs_cardinality: _Optional[int] = ..., incomplete_cluster: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, prs_name: _Optional[str] = ..., sample_scores: _Optional[_Iterable[_Union[SampleScore, _Mapping]]] = ..., dominant: _Optional[bool] = ..., recessive: _Optional[bool] = ..., prs_cardinality: _Optional[int] = ..., incomplete_cluster: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class SampleScore(_message.Message):
     __slots__ = ("sample", "scores_sum", "hethom_cardinality", "ref_cardinality", "mis_cardinality", "imputed_sum")
@@ -1162,7 +1174,7 @@ class FstatXRequest(_message.Message):
     male_threshold: float
     include_par: bool
     seq: bool
-    def __init__(self, cohort_name: _Optional[str] = ..., samples: _Optional[_Iterable[str]] = ..., aaf_threshold: _Optional[float] = ..., female_threshold: _Optional[float] = ..., male_threshold: _Optional[float] = ..., include_par: bool = ..., seq: bool = ...) -> None: ...
+    def __init__(self, cohort_name: _Optional[str] = ..., samples: _Optional[_Iterable[str]] = ..., aaf_threshold: _Optional[float] = ..., female_threshold: _Optional[float] = ..., male_threshold: _Optional[float] = ..., include_par: _Optional[bool] = ..., seq: _Optional[bool] = ...) -> None: ...
 
 class SexMismatchResponse(_message.Message):
     __slots__ = ("mismatch_males", "mismatch_females", "incomplete_cluster", "elapsed_ms", "elapsed_db_ms", "node_id")
@@ -1178,7 +1190,7 @@ class SexMismatchResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, mismatch_males: _Optional[_Iterable[_Union[SampleStat, _Mapping]]] = ..., mismatch_females: _Optional[_Iterable[_Union[SampleStat, _Mapping]]] = ..., incomplete_cluster: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, mismatch_males: _Optional[_Iterable[_Union[SampleStat, _Mapping]]] = ..., mismatch_females: _Optional[_Iterable[_Union[SampleStat, _Mapping]]] = ..., incomplete_cluster: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class SampleStat(_message.Message):
     __slots__ = ("sample", "reported_sex", "observed_sex", "f_stat")
@@ -1206,7 +1218,7 @@ class FstatXResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, males: _Optional[_Iterable[_Union[SampleStat, _Mapping]]] = ..., females: _Optional[_Iterable[_Union[SampleStat, _Mapping]]] = ..., incomplete_cluster: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, males: _Optional[_Iterable[_Union[SampleStat, _Mapping]]] = ..., females: _Optional[_Iterable[_Union[SampleStat, _Mapping]]] = ..., incomplete_cluster: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class KinshipRequest(_message.Message):
     __slots__ = ("cohort_name", "samples", "degree", "threshold", "seq")
@@ -1220,7 +1232,7 @@ class KinshipRequest(_message.Message):
     degree: KinshipDegree
     threshold: float
     seq: bool
-    def __init__(self, cohort_name: _Optional[str] = ..., samples: _Optional[_Iterable[str]] = ..., degree: _Optional[_Union[KinshipDegree, str]] = ..., threshold: _Optional[float] = ..., seq: bool = ...) -> None: ...
+    def __init__(self, cohort_name: _Optional[str] = ..., samples: _Optional[_Iterable[str]] = ..., degree: _Optional[_Union[KinshipDegree, str]] = ..., threshold: _Optional[float] = ..., seq: _Optional[bool] = ...) -> None: ...
 
 class KinshipDuoRequest(_message.Message):
     __slots__ = ("sample1", "sample2", "seq")
@@ -1230,7 +1242,7 @@ class KinshipDuoRequest(_message.Message):
     sample1: str
     sample2: str
     seq: bool
-    def __init__(self, sample1: _Optional[str] = ..., sample2: _Optional[str] = ..., seq: bool = ...) -> None: ...
+    def __init__(self, sample1: _Optional[str] = ..., sample2: _Optional[str] = ..., seq: _Optional[bool] = ...) -> None: ...
 
 class KinshipTrioRequest(_message.Message):
     __slots__ = ("sample1", "sample2", "sample3", "degree", "threshold", "seq")
@@ -1246,7 +1258,7 @@ class KinshipTrioRequest(_message.Message):
     degree: KinshipDegree
     threshold: float
     seq: bool
-    def __init__(self, sample1: _Optional[str] = ..., sample2: _Optional[str] = ..., sample3: _Optional[str] = ..., degree: _Optional[_Union[KinshipDegree, str]] = ..., threshold: _Optional[float] = ..., seq: bool = ...) -> None: ...
+    def __init__(self, sample1: _Optional[str] = ..., sample2: _Optional[str] = ..., sample3: _Optional[str] = ..., degree: _Optional[_Union[KinshipDegree, str]] = ..., threshold: _Optional[float] = ..., seq: _Optional[bool] = ...) -> None: ...
 
 class KinshipResponse(_message.Message):
     __slots__ = ("rel", "incomplete_cluster", "elapsed_ms", "elapsed_db_ms", "node_id")
@@ -1260,7 +1272,7 @@ class KinshipResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, rel: _Optional[_Iterable[_Union[Relatedness, _Mapping]]] = ..., incomplete_cluster: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, rel: _Optional[_Iterable[_Union[Relatedness, _Mapping]]] = ..., incomplete_cluster: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class Relatedness(_message.Message):
     __slots__ = ("sample1", "sample2", "degree", "phi_bwf")
@@ -1286,7 +1298,7 @@ class SampleKinshipRequest(_message.Message):
     degree: KinshipDegree
     threshold: float
     seq: bool
-    def __init__(self, sample_vcf: _Optional[str] = ..., cohort_name: _Optional[str] = ..., degree: _Optional[_Union[KinshipDegree, str]] = ..., threshold: _Optional[float] = ..., seq: bool = ...) -> None: ...
+    def __init__(self, sample_vcf: _Optional[str] = ..., cohort_name: _Optional[str] = ..., degree: _Optional[_Union[KinshipDegree, str]] = ..., threshold: _Optional[float] = ..., seq: _Optional[bool] = ...) -> None: ...
 
 class SampleKinshipResponse(_message.Message):
     __slots__ = ("rel", "accepted_snvs", "incomplete_cluster", "elapsed_ms", "elapsed_db_ms", "node_id")
@@ -1302,7 +1314,7 @@ class SampleKinshipResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, rel: _Optional[_Iterable[_Union[RelatednessPerSample, _Mapping]]] = ..., accepted_snvs: _Optional[int] = ..., incomplete_cluster: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, rel: _Optional[_Iterable[_Union[RelatednessPerSample, _Mapping]]] = ..., accepted_snvs: _Optional[int] = ..., incomplete_cluster: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class RelatednessPerSample(_message.Message):
     __slots__ = ("sample", "degree", "phi_bwf", "common_loci", "nHetS1", "nHetS2", "nHetS1S2", "nHomOp")
@@ -1348,7 +1360,7 @@ class CountAllelesInRegionRequest(_message.Message):
     assembly: RefAssembly
     variantMinLength: int
     variantMaxLength: int
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ...) -> None: ...
 
 class CountAllelesInRegionInSamplesRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "samples")
@@ -1376,7 +1388,7 @@ class CountAllelesInRegionInSamplesRequest(_message.Message):
     variantMinLength: int
     variantMaxLength: int
     samples: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start: _Optional[int] = ..., end: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class CountAllelesInBracketRequest(_message.Message):
     __slots__ = ("chr", "start_min", "start_max", "end_min", "end_max", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength")
@@ -1406,7 +1418,7 @@ class CountAllelesInBracketRequest(_message.Message):
     assembly: RefAssembly
     variantMinLength: int
     variantMaxLength: int
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start_min: _Optional[int] = ..., start_max: _Optional[int] = ..., end_min: _Optional[int] = ..., end_max: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start_min: _Optional[int] = ..., start_max: _Optional[int] = ..., end_min: _Optional[int] = ..., end_max: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ...) -> None: ...
 
 class CountAllelesInBracketInSamplesRequest(_message.Message):
     __slots__ = ("chr", "start_min", "start_max", "end_min", "end_max", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "samples")
@@ -1438,7 +1450,7 @@ class CountAllelesInBracketInSamplesRequest(_message.Message):
     variantMinLength: int
     variantMaxLength: int
     samples: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start_min: _Optional[int] = ..., start_max: _Optional[int] = ..., end_min: _Optional[int] = ..., end_max: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Union[Chromosome, str]] = ..., start_min: _Optional[int] = ..., start_max: _Optional[int] = ..., end_min: _Optional[int] = ..., end_max: _Optional[int] = ..., ref: _Optional[str] = ..., alt: _Optional[str] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class CountAllelesInMultiRegionsRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength")
@@ -1464,7 +1476,7 @@ class CountAllelesInMultiRegionsRequest(_message.Message):
     assembly: RefAssembly
     variantMinLength: int
     variantMaxLength: int
-    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ...) -> None: ...
 
 class CountAllelesInMultiRegionsInSamplesRequest(_message.Message):
     __slots__ = ("chr", "start", "end", "ref", "alt", "hom", "het", "ann", "assembly", "variantMinLength", "variantMaxLength", "samples")
@@ -1492,7 +1504,7 @@ class CountAllelesInMultiRegionsInSamplesRequest(_message.Message):
     variantMinLength: int
     variantMaxLength: int
     samples: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: bool = ..., het: bool = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, chr: _Optional[_Iterable[_Union[Chromosome, str]]] = ..., start: _Optional[_Iterable[int]] = ..., end: _Optional[_Iterable[int]] = ..., ref: _Optional[_Iterable[str]] = ..., alt: _Optional[_Iterable[str]] = ..., hom: _Optional[bool] = ..., het: _Optional[bool] = ..., ann: _Optional[_Union[Annotations, _Mapping]] = ..., assembly: _Optional[_Union[RefAssembly, str]] = ..., variantMinLength: _Optional[int] = ..., variantMaxLength: _Optional[int] = ..., samples: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class CountAllelesResponse(_message.Message):
     __slots__ = ("count", "incomplete_cluster", "affected", "elapsed_ms", "elapsed_db_ms", "node_id")
@@ -1508,7 +1520,7 @@ class CountAllelesResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, count: _Optional[int] = ..., incomplete_cluster: bool = ..., affected: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, count: _Optional[int] = ..., incomplete_cluster: _Optional[bool] = ..., affected: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
 
 class CountSamplesResponse(_message.Message):
     __slots__ = ("count", "incomplete_cluster", "affected", "elapsed_ms", "elapsed_db_ms", "node_id")
@@ -1524,4 +1536,4 @@ class CountSamplesResponse(_message.Message):
     elapsed_ms: int
     elapsed_db_ms: int
     node_id: str
-    def __init__(self, count: _Optional[int] = ..., incomplete_cluster: bool = ..., affected: bool = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, count: _Optional[int] = ..., incomplete_cluster: _Optional[bool] = ..., affected: _Optional[bool] = ..., elapsed_ms: _Optional[int] = ..., elapsed_db_ms: _Optional[int] = ..., node_id: _Optional[str] = ...) -> None: ...

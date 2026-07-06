@@ -38,12 +38,12 @@ def make_variant_proto(**overrides) -> pb2.Variant:
         "af": 0.5,
         "ac": 1.0,
         "an": 2,
-        "homc": 0,
-        "hetc": 1,
-        "misc": 0,
-        "homfc": 0,
-        "hetfc": 0,
-        "misfc": 0,
+        "hom_samples": 0,
+        "het_samples": 1,
+        "mis_samples": 0,
+        "hom_samples_fx": 0,
+        "het_samples_fx": 0,
+        "mis_samples_fx": 0,
         "gnomADe": 0.1,
         "gnomADg": 0.2,
         "cadd_raw": 3.5,
@@ -85,10 +85,10 @@ def make_variant_with_stats_proto(**overrides) -> pb2.VariantWithStats:
         "vaf": 0.4,
         "vac": 1.5,
         "van": 4,
-        "vhomc": 0,
-        "vhetc": 1,
-        "vhomfc": 0,
-        "vhetfc": 0,
+        "v_hom_samples": 0,
+        "v_het_samples": 1,
+        "v_hom_samples_fx": 0,
+        "v_het_samples_fx": 0,
         "phwe": 0.05,
         "pchi2": 0.01,
         "ibc": 0.02,
@@ -283,10 +283,13 @@ class TestVariantStream:
         assert len(df) == 2
         assert list(df.columns) == [
             "chr", "start", "end", "ref", "alt", "af", "ac", "an",
-            "homc", "hetc", "misc", "homfc", "hetfc", "misfc",
+            "hom_samples", "het_samples", "mis_samples",
+            "hom_samples_fx", "het_samples_fx", "mis_samples_fx",
+            "hom_samples_mxy", "het_samples_mxy", "mis_samples_mxy",
             "gnomad_exomes_af", "gnomad_genomes_af",
             "cadd_raw", "cadd_phred", "am_score", "amino_acids", "biallelic",
         ]
+        assert len(df.columns) == 24
         # Verify dtypes
         assert df["chr"].dtype == object
         assert df["start"].dtype.name == "int32"
@@ -323,9 +326,9 @@ class TestVariantStream:
 
     def test_variant_stream_to_dataframe_chr_as_string(self):
         pd = pytest.importorskip("pandas")
-        v1 = make_variant_proto(chr=1)   # CHR_1
-        v2 = make_variant_proto(chr=23)  # CHR_X
-        v3 = make_variant_proto(chr=25)  # CHR_MT
+        v1 = make_variant_proto(chr=1)   # CHR1
+        v2 = make_variant_proto(chr=23)  # CHRX
+        v3 = make_variant_proto(chr=25)  # CHRMT
         chunk = pb2.AllelesResponse(
             variants=[v1, v2, v3],
             elapsed_ms=10, elapsed_db_ms=5, node_id="n1",
@@ -400,14 +403,19 @@ class TestVariantWithStatsStream:
         assert len(df) == 2
         expected_cols = [
             "chr", "start", "end", "ref", "alt", "af", "ac", "an",
-            "homc", "hetc", "misc", "homfc", "hetfc", "misfc",
+            "hom_samples", "het_samples", "mis_samples",
+            "hom_samples_fx", "het_samples_fx", "mis_samples_fx",
+            "hom_samples_mxy", "het_samples_mxy", "mis_samples_mxy",
             "gnomad_exomes_af", "gnomad_genomes_af",
             "cadd_raw", "cadd_phred", "am_score", "amino_acids", "biallelic",
-            "vaf", "vac", "van", "vhomc", "vhetc", "vhomfc", "vhetfc",
+            "vaf", "vac", "van",
+            "v_hom_samples", "v_het_samples",
+            "v_hom_samples_fx", "v_het_samples_fx",
+            "v_hom_samples_mxy", "v_het_samples_mxy",
             "phwe", "pchi2", "odds_ratio", "ibc",
         ]
         assert list(df.columns) == expected_cols
-        assert len(df.columns) == 32
+        assert len(df.columns) == 37
         # Verify dtypes for stats columns
         assert df["vaf"].dtype.name == "float32"
         assert df["van"].dtype.name == "int32"

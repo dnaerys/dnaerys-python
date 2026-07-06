@@ -6,7 +6,7 @@ genome variant store. This library wraps ~36 gRPC RPCs into ~27 Pythonic methods
 handles enum resolution, proto-to-dataclass conversion, streaming iteration, and
 translates gRPC errors into a clean exception hierarchy.
 
-**Proto version:** R1.17.8
+**Proto version:** R1.20.0
 
 .. code-block:: python
 

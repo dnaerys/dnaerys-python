@@ -4,16 +4,24 @@ Pagination
 Why pagination matters
 ----------------------
 
-Dnaerys is a distributed database. When you set ``limit=100`` on
-:meth:`~dnaerys.DnaerysClient.select_variants`, that limit is a **hard global
-cap** enforced client-side by the stream wrapper — you will receive at most 100
-results regardless of how many nodes serve the query. The value is also forwarded
-to the server as a performance hint.
+Dnaerys is a distributed database. Its data is range-partitioned across *rings*
+(nodes) with no duplication, and each ring **hard-caps** the number of variants
+it returns per request (``DatasetInfo.max_variants_per_ring``, default 5000). ``skip`` and ``limit`` are applied **per ring**, not globally.
 
-However, ``skip`` is **not** exposed on the public ``select_*`` methods because
-its per-node semantics do not provide true global offset-based pagination. If
-a cluster has 8 nodes and you set ``skip=100`` in the underlying gRPC call,
-each node independently skips 100 rows.
+When you set ``limit=100`` on
+:meth:`~dnaerys.DnaerysClient.select_variants`, that limit is a **hard global
+cap** — you receive at most 100 results regardless of cluster topology. Because
+the client fetches in internal, constant-window ``skip`` batches and trims the
+result to exactly ``limit``, the cap may safely **exceed** a ring's per-request
+limit and is still honoured (e.g. ``limit=50000`` works even though each ring
+returns at most 5000 per request).
+
+When you set ``limit=None`` a single request is issued and each ring returns up
+to its cap, so results for very large regions may be **truncated**. To retrieve
+*everything*, either pass a ``limit`` large enough, or paginate.
+
+``skip`` is **not** exposed on the public ``select_*`` methods because its
+per-ring semantics do not provide global offset-based pagination: ``skip=100`` makes each ring independently skip 100 rows.
 
 How PaginatedQuery solves this
 ------------------------------
@@ -21,16 +29,21 @@ How PaginatedQuery solves this
 The ``paginate_*`` factory methods on :class:`~dnaerys.DnaerysClient` return a
 :class:`~dnaerys.PaginatedQuery` that manages ``skip``/``limit`` internally:
 
-1. It fetches a batch of ``buffer_size`` variants from the server (default 5000).
-2. It stores them in an internal ``collections.deque`` buffer.
+1. It requests a per-ring window of ``buffer_size`` variants from every owner
+   ring (``buffer_size`` defaults to, and is capped at, the server per-ring
+   limit so no ring is left with a gap).
+2. It keeps **every** ring's window (a round-trip can therefore yield up to
+   ``buffer_size × owner_rings`` variants) in an internal ``collections.deque``.
 3. When you call :meth:`~dnaerys.PaginatedQuery.next_page` (or iterate with
-   ``for page in query``), it pops ``page_size`` variants from the buffer.
-4. When the buffer runs low, it transparently fetches the next batch from the
-   server with an incremented ``skip``.
-5. Exhaustion is detected when the server returns an empty batch.
+   ``for page in query``), it pops ``page_size`` variants from the buffer,
+   refilling as many times as needed.
+4. Each refill advances ``skip`` by a **constant** ``buffer_size``; because the
+   window is ``≤`` the per-ring cap, this walks every ring's partition with no
+   gaps and no duplicates.
+5. Exhaustion is detected when a refill returns an empty batch.
 
-This gives you clean, fixed-size pages without needing to know about cluster
-topology or per-node skip semantics.
+This gives you clean, fixed-size pages — complete across the whole cluster —
+without needing to know about topology or per-ring skip semantics.
 
 Available paginate methods
 --------------------------
@@ -108,17 +121,22 @@ Inheritance pagination
 Controlling buffer size
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``buffer_size`` parameter (default 5000) controls how many variants are
-fetched per server round-trip. Increase it to reduce round-trips for large
-result sets, or decrease it to limit memory usage:
+``buffer_size`` is the **per-ring window** requested each round-trip. It
+defaults to the server per-ring cap (discovered from ``dataset_info``, falling
+back to 5000). It **must not exceed** that cap — a larger value is silently
+clamped down (with a warning), because a window bigger than the cap would leave
+gaps between pages. You may set a *smaller* value to reduce memory use:
 
 .. code-block:: python
 
    query = client.paginate_variants(
        region=Region("chr17", 7661779, 7687546),
        page_size=100,
-       buffer_size=10000,  # Fetch 10k variants per round-trip
+       buffer_size=1000,  # smaller per-ring window, more round-trips
    )
+
+``page_size`` may be larger than ``buffer_size``; a page is simply assembled
+from as many round-trips as needed.
 
 Using as a context manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

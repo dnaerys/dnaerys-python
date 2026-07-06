@@ -20,9 +20,11 @@ from dnaerys._types import ResponseMetadata, Variant
 
 def make_fake_variant(start: int) -> Variant:
     return Variant(
-        chr=Chromosome.CHR_1, start=start, end=start,
+        chr=Chromosome.CHR1, start=start, end=start,
         ref="A", alt="T", af=0.5, ac=1.0, an=2,
-        homc=0, hetc=1, misc=0, homfc=0, hetfc=0, misfc=0,
+        hom_samples=0, het_samples=1, mis_samples=0,
+        hom_samples_fx=0, het_samples_fx=0, mis_samples_fx=0,
+        hom_samples_mxy=0, het_samples_mxy=0, mis_samples_mxy=0,
         gnomad_exomes_af=0.0, gnomad_genomes_af=0.0,
         cadd_raw=0.0, cadd_phred=0.0, am_score=0.0,
         amino_acids="", biallelic=True,
@@ -101,9 +103,22 @@ class TestConstructionValidation:
         with pytest.raises(ValueError, match="page_size must be >= 1"):
             PaginatedQuery(lambda s, l: None, page_size=-1)
 
-    def test_buffer_size_less_than_page_size_raises(self):
-        with pytest.raises(ValueError, match="buffer_size must be >= page_size"):
-            PaginatedQuery(lambda s, l: None, page_size=100, buffer_size=50)
+    def test_buffer_size_zero_raises(self):
+        with pytest.raises(ValueError, match="buffer_size must be >= 1"):
+            PaginatedQuery(lambda s, l: None, page_size=100, buffer_size=0)
+
+    def test_buffer_size_smaller_than_page_size_allowed(self):
+        # buffer_size is bounded by the server per-ring cap; a page is assembled
+        # from as many round-trips as needed, so page_size may exceed it.
+        def fetch(skip, limit):
+            variants = [] if skip >= 30 else [make_fake_variant(skip + i) for i in range(10)]
+            return make_fake_stream(variants)
+
+        q = PaginatedQuery(fetch, page_size=25, buffer_size=10)
+        page1 = q.next_page()
+        assert len(page1.variants) == 25  # three round-trips of 10 assemble it
+        page2 = q.next_page()
+        assert len(page2.variants) == 5  # remainder
 
     def test_valid_construction(self):
         q = PaginatedQuery(lambda s, l: None, page_size=10, buffer_size=100)

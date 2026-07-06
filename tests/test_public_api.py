@@ -87,4 +87,4 @@ def test_no_hardcoded_paths():
 
 def test_proto_version_constant():
     """PROTO_VERSION constant matches the expected schema version."""
-    assert dnaerys.PROTO_VERSION == "R1.17.8"
+    assert dnaerys.PROTO_VERSION == "R1.20.0"

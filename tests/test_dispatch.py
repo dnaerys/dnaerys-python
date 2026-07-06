@@ -148,7 +148,7 @@ class TestDispatchSelectVariants:
         )
         call_args = stub.SelectVariantsInRegion.call_args
         request = call_args[0][0]
-        assert request.chr == int(Chromosome.CHR_1)
+        assert request.chr == int(Chromosome.CHR1)
         assert request.start == 100
         assert request.end == 200
         assert request.hom is True
@@ -207,7 +207,7 @@ class TestDispatchSelectVariantsWithStats:
             skip=None, limit=None, timeout=None, **COMMON,
         )
         request = stub.SelectVariantsInMultiRegionsWithStats.call_args[0][0]
-        assert list(request.chr) == [int(Chromosome.CHR_1)]
+        assert list(request.chr) == [int(Chromosome.CHR1)]
         assert list(request.start) == [100]
         assert list(request.end) == [200]
 
@@ -337,7 +337,7 @@ class TestMultiRegionDecomposition:
             skip=None, limit=None, timeout=None, **COMMON,
         )
         request = stub.SelectVariantsInMultiRegions.call_args[0][0]
-        assert list(request.chr) == [int(Chromosome.CHR_1), int(Chromosome.CHR_2)]
+        assert list(request.chr) == [int(Chromosome.CHR1), int(Chromosome.CHR2)]
         assert list(request.start) == [100, 300]
         assert list(request.end) == [200, 400]
 

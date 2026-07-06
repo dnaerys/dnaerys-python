@@ -1,6 +1,6 @@
 [project]
 name = "dnaerys"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python client library for the Dnaerys genome variant store"
 authors = [{name = "Dnaerys", email = "info@dnaerys.org"}]
 readme = "README.md"
