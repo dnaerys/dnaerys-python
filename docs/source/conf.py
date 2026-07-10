@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath("../../src"))
 project = "Dnaerys Python Client Library"
 copyright = "2026, Dnaerys"
 author = "Dnaerys"
-release = "0.2.0"
+release = "0.2.1"
 
 # -- General configuration ---------------------------------------------------
 

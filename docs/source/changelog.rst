@@ -1,6 +1,14 @@
 Changelog
 =========
 
+v0.2.1 (July 2026)
+------------------
+
+- **Lower the minimum supported Python to 3.11** (previously 3.12). The library
+  is fully source-compatible with Python 3.11 — there are no API changes.
+  ``requires-python`` is now ``>=3.11`` and a ``Python :: 3.11`` classifier was
+  added. Python 3.12 and 3.13 remain supported.
+
 v0.2.0 (July 2026)
 ------------------
 
